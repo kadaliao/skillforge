@@ -1,0 +1,154 @@
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { generateSkillTreeStream } from '@/lib/ai';
+import { prisma } from '@/lib/prisma';
+
+const generateTreeSchema = z.object({
+  goal: z.string().min(5, 'Goal must be at least 5 characters'),
+  currentLevel: z.enum(['beginner', 'intermediate', 'advanced']),
+  weeklyHours: z.number().min(1).max(168),
+  preferences: z.array(z.string()).optional(),
+});
+
+// Temporary user ID for demo purposes
+const DEMO_USER_ID = 'demo-user';
+
+export async function POST(req: NextRequest) {
+  console.log('\n🔵 [API] POST /api/ai/generate-tree-stream - Request received');
+
+  const encoder = new TextEncoder();
+
+  // Create a readable stream for SSE
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (message: string) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ message })}\n\n`));
+      };
+
+      try {
+        const body = await req.json();
+        send('📥 Request received');
+
+        // Validate input
+        send('🔍 Validating input...');
+        const validatedData = generateTreeSchema.parse(body);
+        send('✓ Input validation passed');
+
+        // Generate skill tree using AI with streaming
+        const aiSkillTree = await generateSkillTreeStream(validatedData, send);
+
+        // Ensure demo user exists
+        send('👤 Setting up user...');
+        await prisma.user.upsert({
+          where: { id: DEMO_USER_ID },
+          create: {
+            id: DEMO_USER_ID,
+            email: 'demo@skillforge.dev',
+            name: 'Demo User',
+          },
+          update: {},
+        });
+
+        // Save to database
+        send('💾 Saving skill tree to database...');
+        const savedSkillTree = await prisma.skillTree.create({
+          data: {
+            userId: DEMO_USER_ID,
+            name: aiSkillTree.treeName,
+            description: aiSkillTree.description,
+            domain: aiSkillTree.domain,
+            aiGenerated: true,
+            skills: {
+              create: aiSkillTree.skills.map((skill, index) => ({
+                name: skill.name,
+                description: skill.description,
+                category: skill.category,
+                status: index < 2 ? 'AVAILABLE' : 'LOCKED',
+                xpToNextLevel: skill.xpReward,
+                positionX: (index % 4) * 300,
+                positionY: Math.floor(index / 4) * 200,
+                aiMetadata: {
+                  estimatedHours: skill.estimatedHours,
+                  difficulty: skill.difficulty,
+                  resources: skill.resources,
+                  xpReward: skill.xpReward,
+                  prerequisites: skill.prerequisites,
+                },
+              })),
+            },
+          },
+          include: {
+            skills: true,
+          },
+        });
+
+        // Connect skill prerequisites
+        send('🔗 Connecting skill dependencies...');
+        for (const aiSkill of aiSkillTree.skills) {
+          const skill = savedSkillTree.skills.find((s) => s.name === aiSkill.name);
+          if (!skill) continue;
+
+          const prerequisiteIds = aiSkill.prerequisites
+            .map((prereqName) => savedSkillTree.skills.find((s) => s.name === prereqName)?.id)
+            .filter((id): id is string => id !== undefined);
+
+          if (prerequisiteIds.length > 0) {
+            await prisma.skill.update({
+              where: { id: skill.id },
+              data: {
+                prerequisites: {
+                  connect: prerequisiteIds.map((id) => ({ id })),
+                },
+              },
+            });
+          }
+        }
+
+        send('✓ Skill tree saved successfully');
+
+        // Send success with skill tree ID
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              success: true,
+              data: {
+                id: savedSkillTree.id,
+                ...aiSkillTree,
+              },
+            })}\n\n`
+          )
+        );
+
+        controller.close();
+      } catch (error) {
+        console.error('\n❌ [API] Error in generate-tree-stream:', error);
+
+        let errorMessage = 'Failed to generate skill tree';
+        if (error instanceof z.ZodError) {
+          errorMessage = `Validation error: ${error.issues.map((i) => i.message).join(', ')}`;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              success: false,
+              error: errorMessage,
+            })}\n\n`
+          )
+        );
+
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
+}

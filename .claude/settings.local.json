@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash([ -f .env ])",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)",
+      "Read(//Users/liaoxingyi/.claude/commands/**)",
+      "Bash(npm run build:*)",
+      "Bash(pg_isready:*)",
+      "Bash(brew services:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(psql:*)",
+      "Bash(npm uninstall:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "outputStyle": "linus"
+}
