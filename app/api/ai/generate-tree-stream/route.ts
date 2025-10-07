@@ -4,6 +4,9 @@ import { generateSkillTreeStream } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 
+// Increase timeout for long-running AI requests
+export const maxDuration = 300; // 5 minutes (Vercel Pro max)
+
 const generateTreeSchema = z.object({
   goal: z.string().min(5, 'Goal must be at least 5 characters'),
   currentLevel: z.enum(['beginner', 'intermediate', 'advanced']),
@@ -68,8 +71,9 @@ export async function POST(req: NextRequest) {
                 category: skill.category,
                 status: index < 2 ? 'AVAILABLE' : 'LOCKED',
                 xpToNextLevel: skill.xpReward,
-                positionX: (index % 4) * 300,
-                positionY: Math.floor(index / 4) * 200,
+                // Let React Flow + dagre calculate positions automatically
+                positionX: null,
+                positionY: null,
                 aiMetadata: {
                   estimatedHours: skill.estimatedHours,
                   difficulty: skill.difficulty,
@@ -77,6 +81,18 @@ export async function POST(req: NextRequest) {
                   xpReward: skill.xpReward,
                   prerequisites: skill.prerequisites,
                 },
+                // Tasks will be generated on-demand when user clicks on skill
+                tasks: skill.tasks
+                  ? {
+                      create: skill.tasks.map((task) => ({
+                        title: task.title,
+                        description: task.description,
+                        type: task.type,
+                        xpReward: task.xpReward,
+                        estimatedHours: task.estimatedHours,
+                      })),
+                    }
+                  : undefined,
               })),
             },
           },

@@ -64,6 +64,15 @@ export async function POST(req: NextRequest) {
               xpReward: skill.xpReward,
               prerequisites: skill.prerequisites,
             },
+            tasks: {
+              create: skill.tasks.map((task) => ({
+                title: task.title,
+                description: task.description,
+                type: task.type,
+                xpReward: task.xpReward,
+                estimatedHours: task.estimatedHours,
+              })),
+            },
           })),
         },
       },

@@ -6,7 +6,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 15:45
+> **Last Updated:** 2025-10-07 19:45
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -38,15 +38,18 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
    - **Streaming support** with Server-Sent Events (SSE) for real-time progress
    - Type-safe responses (Zod → TypeScript)
    - Compatible with any OpenAI-compatible API
+   - Configurable max_tokens (default 16384, customizable via `OPENAI_MAX_TOKENS`)
+   - Intelligent JSON repair for truncated responses
    - Endpoints:
      - `/api/ai/generate-tree-stream` (streaming with real-time progress)
      - `/api/ai/generate-tree` (legacy, non-streaming)
-     - `/api/ai/evaluate-task` (task quality evaluation)
+     - `/api/ai/evaluate-task` (task quality evaluation with submission analysis)
    - Intelligent learning path creation based on:
      - User's goal
      - Current skill level
      - Weekly time availability
      - Learning preferences
+   - **Auto-generates tasks**: Each skill includes 3 progressive tasks (STUDY → PRACTICE → PROJECT)
 
 5. **Landing Page**
    - Hero section with value proposition
@@ -56,22 +59,25 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ### Phase 2 - Interactive Skill Tree (✅ COMPLETED)
 
-1. **React Flow Visualization**
-   - Custom SkillNode components with progress indicators
-   - Interactive canvas with zoom, pan, and minimap controls
+1. **Simple Hierarchical Visualization**
+   - Clean card-based layout with level grouping (Level 1, Level 2, Level 3...)
+   - **Clickable skill cards** - Opens side panel with tasks and progress details
    - Visual status colors: LOCKED (gray), AVAILABLE (blue), IN_PROGRESS (yellow), COMPLETED (green), MASTERED (purple)
-   - Real-time XP and task completion progress bars
-   - Animated edges for skills in progress
+   - Real-time XP and task completion progress bars on each card
+   - **Prerequisite navigation**: Clickable ↑ badges show required skills
+   - Responsive grid layout (3 columns on desktop, 1 on mobile)
+   - Side task panel with task management features
 
 2. **Database Integration**
    - AI-generated skill trees saved to PostgreSQL
    - Prerequisite relationship mapping
-   - Skill positioning for React Flow layout (4-column grid)
-   - Demo user auto-creation for testing
+   - Automatic hierarchical level calculation using topological sort
+   - Auto-redirect to tree visualization after generation
 
 3. **API Endpoints**
    - `/api/skill-tree/[id]` - Fetch skill tree with all skills and prerequisites
    - `/tree/[id]` - Server-rendered skill tree visualization page
+   - `/api/ai/generate-tasks` - Generate AI tasks for skills without tasks
 
 4. **Streaming Progress Display**
    - Real-time console-like UI showing AI generation progress
@@ -106,6 +112,8 @@ OPENAI_API_KEY="your-openai-api-key"
 OPENAI_BASE_URL="https://api.openai.com/v1"
 # Optional: Model name, defaults to gpt-4o
 OPENAI_MODEL="gpt-4o"
+# Optional: Max tokens for AI generation (default: 16384)
+OPENAI_MAX_TOKENS="16384"
 ```
 
 3. Generate Prisma Client:
@@ -113,9 +121,10 @@ OPENAI_MODEL="gpt-4o"
 npx prisma generate
 ```
 
-4. Run migrations (when database is available):
+4. Run migrations and seed achievements:
 ```bash
-npx prisma migrate dev
+npx prisma migrate dev          # Apply database migrations
+npx tsx prisma/seed-achievements.ts  # Seed 12 predefined achievements
 ```
 
 5. Start development server:
@@ -174,32 +183,92 @@ npm run lint                  # Run ESLint
    - User-specific data isolation
    - Removed demo user - all data is user-owned
 
+### Phase 4 - Gamification Mechanics (✅ COMPLETED)
+
+1. **XP & Leveling System**
+   - Exponential XP formulas for user and skill progression
+   - User leveling: 100 XP × 1.5^(level-1)
+   - Skill leveling: 50 XP × 1.3^(level-1)
+   - Real-time XP calculation and level updates
+
+2. **Task Completion System**
+   - Full progression API: `/api/tasks/[taskId]/complete`
+   - Awards XP → Updates skill progress → Checks level ups → Unlocks prerequisites
+   - Optional AI evaluation for task submissions (quality scoring 1-10)
+   - Adjusted XP rewards based on submission quality
+
+3. **Achievement System**
+   - 12 predefined achievements across 4 rarity tiers:
+     - COMMON: First Steps, Tree Planter, Task Master
+     - RARE: Week Warrior (7-day streak), Dedicated Learner (10 skills), Rising Star (Level 10)
+     - EPIC: Month Master (30-day streak), Knowledge Seeker (50 skills), Tree Master
+     - LEGENDARY: Unstoppable (100-day streak), Grandmaster (Level 50), Polymath (100 skills)
+   - Auto-detection and awarding on task completion
+   - Achievement showcase page at `/achievements`
+
+4. **Streak Tracking**
+   - Daily activity tracking with 48-hour grace period
+   - Current streak and longest streak counters
+   - Fire icon indicator in header navigation
+
+5. **Interactive UI**
+   - Clickable skill nodes with side task panel
+   - Task completion dialog with submission/notes fields
+   - Real-time progress updates after task completion
+   - Toast notifications for level ups, achievements, and skill unlocks
+   - Header displays: User level badge, total XP, current streak
+   - Tooltips explaining gamification metrics
+
+### Phase 5 - Task Management & Analytics (✅ COMPLETED)
+
+1. **Manual Task Management**
+   - Create custom tasks with `POST /api/tasks` endpoint
+   - Edit tasks with `PUT /api/tasks/[taskId]`
+   - Delete tasks with `DELETE /api/tasks/[taskId]`
+   - Task creation dialog with validation (title, type, XP reward, estimated hours)
+   - Task ordering with `order` field for manual reordering
+   - Integrated "+ Add Task" button in skill tree task panel
+
+2. **Bulk Operations**
+   - Bulk complete: `POST /api/tasks/bulk-complete` (up to 50 tasks)
+   - Bulk delete: `DELETE /api/tasks/bulk-delete` (up to 100 tasks)
+   - Task reordering: `PUT /api/tasks/reorder` with atomic transactions
+   - Checkbox selection UI with bulk actions toolbar
+   - Simplified logic: Bulk complete awards base XP only (no AI evaluation for speed)
+
+3. **Progress Analytics**
+   - XP progression endpoint: `GET /api/analytics/progress?days=30`
+   - Daily XP aggregation with cumulative tracking
+   - Time range views: 7/14/30/90 days
+   - Summary stats: Total XP gained, days active, avg XP per day
+
+4. **Skills Analytics**
+   - Completion stats endpoint: `GET /api/analytics/skills`
+   - Status breakdown: LOCKED → AVAILABLE → IN_PROGRESS → COMPLETED → MASTERED
+   - Tree-level completion rates
+   - Task completion percentages
+
+5. **Analytics Dashboard** (`/analytics`)
+   - Tabbed interface: XP Progress + Skills & Tasks
+   - Daily XP bar chart (last 30 days)
+   - Cumulative XP line chart with hover tooltips
+   - Skills by status distribution with color-coded bars
+   - Progress by skill tree with completion rates
+   - Navigation: "View Analytics" button in dashboard header
+
 ## 📋 Roadmap
 
-### Phase 4 - Gamification Mechanics (NEXT)
+### Phase 6 - Polish & Deploy (IN PROGRESS)
 
-- [ ] XP calculation system
-- [ ] Level progression
-- [ ] Skill unlocking mechanism
-- [ ] Achievement system
-- [ ] Streak tracking
-- [ ] Progress statistics dashboard
-
-### Phase 5 - Task Management
-
-- [ ] Create tasks for skills
-- [ ] Complete tasks and earn XP
-- [ ] AI-powered task evaluation
-- [ ] Task difficulty estimation
-- [ ] Learning resource recommendations
-
-### Phase 6 - Polish & Deploy
-
+- [x] **UI/UX Overhaul** - Replaced complex React Flow with simple card layout
+- [x] **Hierarchical Skill Tree** - Level-based grouping with prerequisite arrows
+- [x] **Consistent Layout** - Unified spacing and responsive design across all pages
+- [x] **Improved Navigation** - Cleaner header, optimized buttons, mobile-friendly
 - [ ] Framer Motion animations
   - Level up effects
   - Skill unlock animations
   - Achievement notifications
-- [ ] Mobile responsiveness
+- [ ] Touch gestures for mobile
 - [ ] Performance optimization
 - [ ] Production deployment (Vercel)
 
@@ -211,7 +280,7 @@ npm run lint                  # Run ESLint
 - TypeScript
 - Tailwind CSS v4
 - shadcn/ui components
-- @xyflow/react (skill tree visualization)
+- Simple hierarchical card-based UI (replaced React Flow for better UX)
 - Framer Motion (animations - planned for Phase 6)
 
 **Backend:**
@@ -247,6 +316,7 @@ Key models:
   - Visual: positionX/positionY for React Flow rendering
 - **Task**: Actionable items to complete skills
   - Types: PRACTICE, PROJECT, STUDY, CHALLENGE, MILESTONE
+  - Fields: order (for manual reordering), submission, notes, estimatedHours
   - AI evaluation: qualityScore, aiFeedback
 - **Activity**: Audit log for all user actions (TASK_COMPLETE, STUDY_SESSION, LEVEL_UP, etc.)
   - Tracks XP gains, duration, timestamps
@@ -256,15 +326,17 @@ Key models:
 
 ### Skill Tree Generation (`/api/ai/generate-tree-stream`)
 - **Input**: User goal, skill level, weekly hours, preferences
-- **Output**: 15-25 skills with dependencies, difficulty ratings (1-10), XP rewards, learning resources
+- **Output**: 12-15 skills with dependencies, difficulty ratings (1-10), XP rewards, learning resources
+- **Each skill includes 3 auto-generated tasks**: Progressive difficulty (STUDY → PRACTICE → PROJECT)
 - **Streaming Mode**: Real-time progress updates via Server-Sent Events (SSE)
   - Shows token generation progress
   - Reports parsing and validation steps
   - Displays database save operations
+  - Intelligent JSON repair for truncated responses
 - **Architecture**:
-  - OpenAI streaming API with `stream: true`
+  - OpenAI streaming API with `stream: true` and configurable `max_tokens` (default 16384)
   - Validates response with `SkillTreeResponseSchema` (Zod)
-  - Saves generated trees to PostgreSQL with prerequisite relationships
+  - Saves generated trees to PostgreSQL with prerequisite relationships and tasks
   - Type-safe TypeScript output inferred from schema
 
 ### Task Evaluation (`/api/ai/evaluate-task`)

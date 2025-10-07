@@ -46,15 +46,20 @@ export default async function DashboardPage() {
   )
 
   return (
-    <div className="container py-8 space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-6 px-4 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Track your learning progress across all skill trees</p>
+          <p className="text-muted-foreground text-sm">Track your learning progress</p>
         </div>
-        <Button asChild>
-          <Link href="/">Create New Tree</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild size="sm">
+            <Link href="/analytics">Analytics</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/">+ New Tree</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
@@ -90,7 +95,12 @@ export default async function DashboardPage() {
 
       {/* Skill Trees List */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Your Skill Trees</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Your Skill Trees</h2>
+          {skillTrees.length > 0 && (
+            <span className="text-sm text-muted-foreground">{skillTrees.length} tree{skillTrees.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
         {skillTrees.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">

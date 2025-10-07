@@ -1,20 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
-import {
-  ReactFlow,
-  Node,
-  Edge,
-  Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-  ConnectionMode,
-  NodeProps,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import dagre from 'dagre';
+import { useState, useCallback, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,8 +20,6 @@ type SkillData = {
   currentXP: number;
   xpToNextLevel: number;
   status: SkillStatus;
-  positionX: number | null;
-  positionY: number | null;
   prerequisites: { id: string; name: string }[];
   tasks: {
     id: string;
@@ -54,133 +38,52 @@ type SkillTreeData = {
   skills: SkillData[];
 };
 
-// Custom node component
-function SkillNode({ data }: NodeProps<SkillData & { label: string; onNodeClick?: (skillId: string) => void }>) {
-  const statusColors = {
-    LOCKED: 'bg-gray-200 dark:bg-gray-800 border-gray-400',
-    AVAILABLE: 'bg-blue-50 dark:bg-blue-950 border-blue-500',
-    IN_PROGRESS: 'bg-yellow-50 dark:bg-yellow-950 border-yellow-500',
-    COMPLETED: 'bg-green-50 dark:bg-green-950 border-green-500',
-    MASTERED: 'bg-purple-50 dark:bg-purple-950 border-purple-500',
-  };
-
-  const statusBadgeColors = {
-    LOCKED: 'bg-gray-500',
-    AVAILABLE: 'bg-blue-500',
-    IN_PROGRESS: 'bg-yellow-500',
-    COMPLETED: 'bg-green-500',
-    MASTERED: 'bg-purple-500',
-  };
-
-  const completedTasks = data.tasks.filter((t) => t.completed).length;
-  const totalTasks = data.tasks.length;
-  const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
-  return (
-    <Card
-      className={`min-w-[200px] max-w-[250px] p-3 border-2 ${statusColors[data.status]} transition-all hover:shadow-lg cursor-pointer`}
-      onClick={() => data.onNodeClick?.(data.id)}
-    >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm leading-tight">{data.name}</h3>
-          <Badge className={`${statusBadgeColors[data.status]} text-white text-xs shrink-0`}>
-            {data.status}
-          </Badge>
-        </div>
-
-        {data.category && (
-          <div className="text-xs text-muted-foreground">{data.category}</div>
-        )}
-
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span>Level {data.currentLevel}/{data.maxLevel}</span>
-            <span>{data.currentXP}/{data.xpToNextLevel} XP</span>
-          </div>
-          <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 transition-all"
-              style={{ width: `${(data.currentXP / data.xpToNextLevel) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {totalTasks > 0 && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span>Tasks</span>
-              <span>{completedTasks}/{totalTasks}</span>
-            </div>
-            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 transition-all"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-const nodeTypes = {
-  skillNode: SkillNode,
-};
-
-// Auto-layout using dagre
-function getLayoutedNodes(skills: SkillData[]): Map<string, { x: number; y: number }> {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-  // Configure layout direction (Top to Bottom) with better spacing
-  dagreGraph.setGraph({
-    rankdir: 'TB',  // Top to Bottom (prerequisite → dependent)
-    nodesep: 120,   // Horizontal spacing between nodes in same rank
-    ranksep: 200,   // Vertical spacing between ranks (levels)
-    marginx: 100,   // Margin around the graph
-    marginy: 100,
-    align: 'UL',    // Align nodes to upper-left for consistency
-  });
-
-  const nodeWidth = 250;
-  const nodeHeight = 150;
-
-  // Add nodes to dagre graph
-  skills.forEach((skill) => {
-    dagreGraph.setNode(skill.id, { width: nodeWidth, height: nodeHeight });
-  });
-
-  // Add edges (prerequisites)
-  skills.forEach((skill) => {
-    skill.prerequisites.forEach((prereq) => {
-      dagreGraph.setEdge(prereq.id, skill.id);
-    });
-  });
-
-  // Calculate layout
-  dagre.layout(dagreGraph);
-
-  // Extract positions
-  const positions = new Map<string, { x: number; y: number }>();
-  skills.forEach((skill) => {
-    const node = dagreGraph.node(skill.id);
-    // dagre returns center position, we need top-left for React Flow
-    positions.set(skill.id, {
-      x: node.x - nodeWidth / 2,
-      y: node.y - nodeHeight / 2,
-    });
-  });
-
-  return positions;
-}
-
-interface SkillTreeCanvasProps {
+interface SkillTreeSimpleProps {
   skillTree: SkillTreeData;
 }
 
-export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
+// Calculate skill levels based on prerequisites (topological sort)
+function calculateSkillLevels(skills: SkillData[]): Map<string, number> {
+  const levels = new Map<string, number>();
+  const visited = new Set<string>();
+
+  function getLevel(skillId: string): number {
+    if (levels.has(skillId)) return levels.get(skillId)!;
+    if (visited.has(skillId)) return 0; // Circular dependency fallback
+
+    visited.add(skillId);
+    const skill = skills.find(s => s.id === skillId);
+    if (!skill || skill.prerequisites.length === 0) {
+      levels.set(skillId, 0);
+      return 0;
+    }
+
+    const maxPrereqLevel = Math.max(
+      ...skill.prerequisites.map(prereq => getLevel(prereq.id))
+    );
+    const level = maxPrereqLevel + 1;
+    levels.set(skillId, level);
+    return level;
+  }
+
+  skills.forEach(skill => getLevel(skill.id));
+  return levels;
+}
+
+// Group skills by level
+function groupSkillsByLevel(skills: SkillData[]): SkillData[][] {
+  const levels = calculateSkillLevels(skills);
+  const maxLevel = Math.max(...Array.from(levels.values()), 0);
+
+  const grouped: SkillData[][] = [];
+  for (let i = 0; i <= maxLevel; i++) {
+    grouped[i] = skills.filter(skill => levels.get(skill.id) === i);
+  }
+
+  return grouped;
+}
+
+export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -188,13 +91,6 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [skillsData, setSkillsData] = useState(skillTree.skills);
   const [generatingTasks, setGeneratingTasks] = useState(false);
-
-  // Debug: Log skill tree structure on mount
-  console.log('[SkillTreeCanvas] Loaded skill tree:', {
-    name: skillTree.name,
-    totalSkills: skillTree.skills.length,
-    skillsWithPrereqs: skillTree.skills.filter(s => s.prerequisites.length > 0).length,
-  });
 
   const selectedSkill = useMemo(
     () => skillsData.find((s) => s.id === selectedSkillId) || null,
@@ -206,9 +102,7 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
     return selectedSkill.tasks.find((t) => t.id === selectedTaskId) || null;
   }, [selectedSkill, selectedTaskId]);
 
-  const handleNodeClick = useCallback((skillId: string) => {
-    setSelectedSkillId(skillId);
-  }, []);
+  const skillLevels = useMemo(() => groupSkillsByLevel(skillsData), [skillsData]);
 
   const handleTaskClick = (task: SkillData['tasks'][0]) => {
     if (task.completed) return;
@@ -221,11 +115,9 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
       skill: { id: string; currentXP: number; currentLevel: number; status: string };
       unlockedSkills: string[];
     }) => {
-      // Update local skills data to reflect completion
       setSkillsData((prev) =>
         prev.map((skill) => {
           if (skill.id === result.skill.id) {
-            // Update the completed skill
             return {
               ...skill,
               currentXP: result.skill.currentXP,
@@ -236,7 +128,6 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
               ),
             };
           }
-          // Unlock dependent skills
           if (result.unlockedSkills.includes(skill.id)) {
             return { ...skill, status: 'AVAILABLE' as SkillStatus };
           }
@@ -250,7 +141,6 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
   );
 
   const handleTaskCreated = useCallback(() => {
-    // Refresh skill data after task creation
     window.location.reload();
   }, []);
 
@@ -332,136 +222,127 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
     });
   }, []);
 
-  // Transform skills into React Flow nodes with auto-layout
-  const initialNodes: Node[] = useMemo(() => {
-    // Calculate auto-layout positions
-    const layoutPositions = getLayoutedNodes(skillsData);
+  const statusColors = {
+    LOCKED: 'bg-gray-200 dark:bg-gray-800 border-gray-400 text-gray-600 dark:text-gray-400',
+    AVAILABLE: 'bg-blue-50 dark:bg-blue-950 border-blue-500 text-blue-900 dark:text-blue-100',
+    IN_PROGRESS: 'bg-yellow-50 dark:bg-yellow-950 border-yellow-500 text-yellow-900 dark:text-yellow-100',
+    COMPLETED: 'bg-green-50 dark:bg-green-950 border-green-500 text-green-900 dark:text-green-100',
+    MASTERED: 'bg-purple-50 dark:bg-purple-950 border-purple-500 text-purple-900 dark:text-purple-100',
+  };
 
-    return skillsData.map((skill) => {
-      const autoPos = layoutPositions.get(skill.id) || { x: 0, y: 0 };
-
-      return {
-        id: skill.id,
-        type: 'skillNode',
-        position: {
-          // Use manual position if set, otherwise use auto-layout
-          x: skill.positionX ?? autoPos.x,
-          y: skill.positionY ?? autoPos.y,
-        },
-        data: {
-          ...skill,
-          label: skill.name,
-          onNodeClick: handleNodeClick,
-        },
-      };
-    });
-  }, [skillsData, handleNodeClick]);
-
-  // Transform prerequisites into React Flow edges
-  const initialEdges: Edge[] = useMemo(() => {
-    const edges: Edge[] = [];
-
-    skillsData.forEach((skill) => {
-      skill.prerequisites.forEach((prereq) => {
-        // Color and width based on skill status - more visible styles
-        let stroke = '#2563eb'; // brighter blue
-        let strokeWidth = 4;
-
-        if (skill.status === 'LOCKED') {
-          stroke = '#6b7280'; // darker gray for better contrast
-          strokeWidth = 3;
-        } else if (skill.status === 'COMPLETED' || skill.status === 'MASTERED') {
-          stroke = '#16a34a'; // darker green
-          strokeWidth = 4;
-        } else if (skill.status === 'IN_PROGRESS') {
-          stroke = '#ca8a04'; // darker yellow
-          strokeWidth = 5;
-        } else if (skill.status === 'AVAILABLE') {
-          stroke = '#2563eb'; // blue
-          strokeWidth = 4;
-        }
-
-        edges.push({
-          id: `${prereq.id}-${skill.id}`,
-          source: prereq.id,
-          target: skill.id,
-          type: 'smoothstep',
-          animated: skill.status === 'IN_PROGRESS',
-          style: {
-            stroke,
-            strokeWidth,
-            strokeOpacity: 0.9,
-          },
-          markerEnd: {
-            type: 'arrowclosed',
-            color: stroke,
-            width: 25,
-            height: 25,
-          },
-          label: undefined, // No labels to keep clean
-        });
-      });
-    });
-
-    console.log(`[SkillTreeCanvas] Generated ${edges.length} edges from skill prerequisites`);
-    return edges;
-  }, [skillsData]);
-
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const statusBadgeColors = {
+    LOCKED: 'bg-gray-500',
+    AVAILABLE: 'bg-blue-500',
+    IN_PROGRESS: 'bg-yellow-500',
+    COMPLETED: 'bg-green-500',
+    MASTERED: 'bg-purple-500',
+  };
 
   return (
-    <div className="flex gap-4 h-[800px]">
-      {/* Skill Tree Visualization */}
-      <div className="flex-1 border rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={nodeTypes}
-          connectionMode={ConnectionMode.Strict}
-          fitView
-          fitViewOptions={{
-            padding: 0.2,
-            minZoom: 0.5,
-            maxZoom: 1.5,
-          }}
-          minZoom={0.1}
-          maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-          panOnScroll
-          panOnDrag
-          zoomOnScroll
-          zoomOnPinch
-          preventScrolling={false}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-        >
-          <Background gap={20} size={1} color="#e5e7eb" />
-          <Controls showInteractive={false} />
-          <MiniMap
-            nodeColor={(node) => {
-              const skill = node.data as SkillData;
-              const colors = {
-                LOCKED: '#9ca3af',
-                AVAILABLE: '#3b82f6',
-                IN_PROGRESS: '#eab308',
-                COMPLETED: '#22c55e',
-                MASTERED: '#a855f7',
-              };
-              return colors[skill.status];
-            }}
-            pannable
-            zoomable
-          />
-        </ReactFlow>
+    <div className="flex gap-6">
+      {/* Skill Tree - Level-based layout */}
+      <div className="flex-1 space-y-6">
+        {skillLevels.map((levelSkills, levelIndex) => (
+          <div key={levelIndex} className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5">
+                Level {levelIndex + 1}
+              </Badge>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">
+                {levelSkills.length} skill{levelSkills.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {levelSkills.map((skill) => {
+                const completedTasks = skill.tasks.filter((t) => t.completed).length;
+                const totalTasks = skill.tasks.length;
+                const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+                return (
+                  <Card
+                    key={skill.id}
+                    className={`p-3 border-2 transition-all cursor-pointer hover:shadow-md ${
+                      selectedSkillId === skill.id ? 'ring-2 ring-primary' : ''
+                    } ${statusColors[skill.status]}`}
+                    onClick={() => setSelectedSkillId(skill.id)}
+                  >
+                    <div className="space-y-2.5">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm leading-tight line-clamp-2">{skill.name}</h3>
+                          {skill.category && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{skill.category}</div>
+                          )}
+                        </div>
+                        <Badge className={`${statusBadgeColors[skill.status]} text-white text-[10px] shrink-0 h-5`}>
+                          {skill.status === 'IN_PROGRESS' ? 'PROGRESS' : skill.status}
+                        </Badge>
+                      </div>
+
+                      {/* Prerequisites */}
+                      {skill.prerequisites.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {skill.prerequisites.map((prereq) => (
+                            <Badge
+                              key={prereq.id}
+                              variant="secondary"
+                              className="text-[10px] h-5 cursor-pointer hover:bg-secondary/80"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSkillId(prereq.id);
+                              }}
+                            >
+                              ↑ {prereq.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Progress Bars */}
+                      <div className="space-y-1.5">
+                        <div className="space-y-0.5">
+                          <div className="flex justify-between text-[10px] text-muted-foreground">
+                            <span>Level {skill.currentLevel}/{skill.maxLevel}</span>
+                            <span>{skill.currentXP}/{skill.xpToNextLevel} XP</span>
+                          </div>
+                          <div className="h-1 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-600 transition-all"
+                              style={{ width: `${(skill.currentXP / skill.xpToNextLevel) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {totalTasks > 0 && (
+                          <div className="space-y-0.5">
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                              <span>Tasks</span>
+                              <span>{completedTasks}/{totalTasks}</span>
+                            </div>
+                            <div className="h-1 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-600 transition-all"
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Task Panel */}
       {selectedSkill && (
-        <Card className="w-96 p-4 overflow-y-auto flex flex-col">
+        <Card className="w-96 p-4 overflow-y-auto flex flex-col max-h-screen sticky top-4">
           <div className="space-y-4 flex-1">
             <div>
               <h3 className="font-semibold text-lg">{selectedSkill.name}</h3>
@@ -565,7 +446,6 @@ export function SkillTreeCanvas({ skillTree }: SkillTreeCanvasProps) {
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      {/* Checkbox for bulk selection */}
                       {!task.completed && (
                         <input
                           type="checkbox"

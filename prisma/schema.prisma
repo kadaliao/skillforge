@@ -122,6 +122,7 @@ model Skill {
   // Status tracking
   status        SkillStatus @default(LOCKED)
   unlockedAt    DateTime?
+  completedAt   DateTime?
   masteredAt    DateTime?
 
   // Visual positioning (for React Flow)
@@ -164,12 +165,15 @@ model Task {
   title           String
   description     String?  @db.Text
   type            TaskType
+  order           Int      @default(0) // For task ordering within a skill
 
   xpReward        Int
   estimatedHours  Float?
 
   completed       Boolean  @default(false)
   completedAt     DateTime?
+  submission      String?  @db.Text // User's work submission
+  notes           String?  @db.Text // User's notes
 
   // AI evaluation results
   qualityScore    Float?   // 1-10
@@ -182,6 +186,7 @@ model Task {
 
   @@index([skillId])
   @@index([completed])
+  @@index([skillId, order]) // Composite index for efficient ordering queries
 }
 
 enum TaskType {
@@ -206,13 +211,14 @@ model Activity {
   task        Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   type        ActivityType
+  description String?      @db.Text
   xpGained    Int          @default(0)
   duration    Int?         // Minutes spent
-  notes       String?      @db.Text
+  metadata    Json?        // Additional data
 
-  timestamp   DateTime     @default(now())
+  createdAt   DateTime     @default(now())
 
-  @@index([userId, timestamp])
+  @@index([userId, createdAt])
   @@index([skillId])
 }
 
@@ -229,21 +235,16 @@ enum ActivityType {
 // ==================== Achievement System ====================
 
 model Achievement {
-  id          String   @id @default(cuid())
+  id          String   @id // "first-skill", "streak-7", "level-10"
 
-  type        String   @unique // "first_skill", "streak_7", "level_10"
-  title       String
+  name        String
   description String
-  icon        String   // Emoji or icon name
+  iconName    String   // Emoji or icon name
   rarity      Rarity
-
-  criteria    Json     // Unlock conditions
 
   createdAt   DateTime @default(now())
 
   users       UserAchievement[]
-
-  @@index([type])
 }
 
 model UserAchievement {

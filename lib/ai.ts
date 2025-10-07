@@ -4,9 +4,19 @@ import { z } from 'zod';
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL, // 支持自定义 endpoint
+  timeout: 15 * 60 * 1000, // 15 minutes (DeepSeek can be slow)
+  maxRetries: 2,
 });
 
 // Zod schemas for structured outputs
+const TaskSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  type: z.enum(['PRACTICE', 'PROJECT', 'STUDY', 'CHALLENGE', 'MILESTONE']),
+  xpReward: z.number(),
+  estimatedHours: z.number().optional(),
+});
+
 const SkillNodeSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -16,6 +26,7 @@ const SkillNodeSchema = z.object({
   prerequisites: z.array(z.string()),
   resources: z.array(z.string()).optional(),
   xpReward: z.number(),
+  tasks: z.array(TaskSchema).optional(), // Tasks now optional - will be generated on-demand
 });
 
 const SkillTreeResponseSchema = z.object({
@@ -40,30 +51,29 @@ export async function generateSkillTreeStream(
   input: SkillTreeGenerationInput,
   onProgress: (chunk: string) => void
 ): Promise<SkillTreeResponse> {
-  const prompt = `You are an expert learning path designer. Generate a comprehensive skill tree based on the user's goal.
+  const prompt = `You are an expert learning path designer. Generate a skill tree SKELETON (structure only, no tasks yet).
 
 User Goal: ${input.goal}
 Current Level: ${input.currentLevel}
 Weekly Time Available: ${input.weeklyHours} hours
 Preferences: ${input.preferences?.join(', ') || 'None specified'}
 
-Create a detailed skill tree with the following requirements:
+Create a skill tree skeleton with the following requirements:
 
-1. Break down the main goal into 15-25 individual skills
+1. Break down the main goal into 12-15 individual skills
 2. Each skill should be achievable in 1-3 weeks
-3. Define clear prerequisite relationships between skills
+3. Define clear prerequisite relationships between skills (this is CRITICAL)
 4. Assign difficulty ratings (1-10) and estimated hours
 5. Calculate XP rewards based on difficulty and time investment (difficulty * estimatedHours * 10)
-6. Include 4-6 major milestones (25%, 50%, 75%, 100% completion markers)
-7. Categorize skills into logical groups (e.g., Frontend, Backend, DevOps for a full-stack goal)
-8. Provide 2-3 learning resource recommendations for key skills
+6. Categorize skills into logical groups (e.g., Frontend, Backend, DevOps)
+7. Provide 2-3 learning resource recommendations per skill
 
 Important:
 - Skills should progress from easier to harder
 - Prerequisite skills must come before dependent skills in the array
 - First 2-3 skills should have no prerequisites (entry points)
 - Difficulty should gradually increase (start at 1-3, end at 7-10)
-- Total estimated hours should align with the given weekly hours and duration
+- DO NOT generate tasks - tasks will be generated later when user clicks on a skill
 
 CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no extra text):
 
@@ -74,16 +84,28 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
   "estimatedDuration": "string - total time estimate (e.g., '6 months', '1 year')",
   "skills": [
     {
-      "name": "string - skill name",
-      "description": "string - what this skill teaches",
+      "name": "string - concise skill name (2-4 words)",
+      "description": "string - what this skill teaches (1-2 sentences)",
       "category": "string - category/group name",
       "estimatedHours": number,
       "difficulty": number (1-10),
-      "prerequisites": ["array of skill names that must be completed first"],
-      "resources": ["optional array of learning resources"],
+      "prerequisites": ["array of skill names that must be completed first - BE PRECISE"],
+      "resources": ["2-3 specific learning resources with URLs or book names"],
       "xpReward": number (difficulty * estimatedHours * 10)
     }
   ]
+}
+
+Example skill structure:
+{
+  "name": "React Fundamentals",
+  "description": "Learn React components, state management, and hooks for building interactive UIs.",
+  "category": "Frontend",
+  "estimatedHours": 20,
+  "difficulty": 4,
+  "prerequisites": ["JavaScript ES6+", "HTML & CSS Basics"],
+  "resources": ["React Official Docs (react.dev)", "Frontend Masters React Course", "Build a Todo App Tutorial"],
+  "xpReward": 800
 }`;
 
   console.log('\n=== AI STREAMING REQUEST START ===');
@@ -101,7 +123,7 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
       messages: [
         {
           role: 'system',
-          content: 'You are a learning path designer. Always respond with valid JSON only.',
+          content: 'You are a learning path designer. Always respond with valid, complete JSON. Ensure all arrays and objects are properly closed.',
         },
         {
           role: 'user',
@@ -109,7 +131,7 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
         },
       ],
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || '16384'), // High limit for long skill trees
       stream: true,
     });
 
@@ -156,7 +178,85 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
 
     onProgress(`📄 Final JSON length: ${jsonContent.length} chars\n`);
 
-    const parsed = JSON.parse(jsonContent);
+    // Try to fix common JSON issues before parsing
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonContent);
+    } catch (parseError) {
+      onProgress(`⚠️ Initial parse failed, attempting to fix JSON...\n`);
+
+      // Common fixes for incomplete JSON
+      let fixedJson = jsonContent;
+
+      // Remove trailing comma in arrays/objects
+      fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
+
+      // Count braces and brackets to determine what's missing
+      const openBraces = (fixedJson.match(/{/g) || []).length;
+      const closeBraces = (fixedJson.match(/}/g) || []).length;
+      const openBrackets = (fixedJson.match(/\[/g) || []).length;
+      const closeBrackets = (fixedJson.match(/]/g) || []).length;
+
+      // Add missing closing brackets/braces
+      if (openBrackets > closeBrackets) {
+        fixedJson += ']'.repeat(openBrackets - closeBrackets);
+        onProgress(`🔧 Added ${openBrackets - closeBrackets} missing ']'\n`);
+      }
+      if (openBraces > closeBraces) {
+        fixedJson += '}'.repeat(openBraces - closeBraces);
+        onProgress(`🔧 Added ${openBraces - closeBraces} missing '}'\n`);
+      }
+
+      // Try parsing again
+      try {
+        parsed = JSON.parse(fixedJson);
+        onProgress(`✓ JSON fixed and parsed successfully\n`);
+      } catch (secondError) {
+        onProgress(`⚠️ Still invalid, trying aggressive repair...\n`);
+
+        // Strategy: Find last comma before error and remove everything after
+        // This removes incomplete trailing objects/arrays
+        let repairAttempts = 0;
+        let repairedJson = fixedJson;
+
+        while (repairAttempts < 10) {
+          const lastComma = repairedJson.lastIndexOf(',');
+          if (lastComma === -1) {
+            break; // No more commas to try
+          }
+
+          // Remove everything after last comma and close properly
+          repairedJson = repairedJson.substring(0, lastComma);
+
+          // Add closing brackets/braces based on what's open
+          const openBraces = (repairedJson.match(/{/g) || []).length;
+          const closeBraces = (repairedJson.match(/}/g) || []).length;
+          const openBrackets = (repairedJson.match(/\[/g) || []).length;
+          const closeBrackets = (repairedJson.match(/]/g) || []).length;
+
+          if (openBrackets > closeBrackets) {
+            repairedJson += ']'.repeat(openBrackets - closeBrackets);
+          }
+          if (openBraces > closeBraces) {
+            repairedJson += '}'.repeat(openBraces - closeBraces);
+          }
+
+          // Try parsing
+          try {
+            parsed = JSON.parse(repairedJson);
+            onProgress(`✓ Repaired by removing trailing elements (attempt ${repairAttempts + 1})\n`);
+            break;
+          } catch {
+            repairAttempts++;
+            continue;
+          }
+        }
+
+        if (!parsed) {
+          throw secondError;
+        }
+      }
+    }
     const skillTree = SkillTreeResponseSchema.parse(parsed);
 
     onProgress(`✓ Validation passed - ${skillTree.skills.length} skills generated\n`);
@@ -191,7 +291,7 @@ Preferences: ${input.preferences?.join(', ') || 'None specified'}
 
 Create a detailed skill tree with the following requirements:
 
-1. Break down the main goal into 15-25 individual skills
+1. Break down the main goal into 12-15 individual skills (keep it concise to avoid truncation)
 2. Each skill should be achievable in 1-3 weeks
 3. Define clear prerequisite relationships between skills
 4. Assign difficulty ratings (1-10) and estimated hours
@@ -223,10 +323,26 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
       "difficulty": number (1-10),
       "prerequisites": ["array of skill names that must be completed first"],
       "resources": ["optional array of learning resources"],
-      "xpReward": number (difficulty * estimatedHours * 10)
+      "xpReward": number (difficulty * estimatedHours * 10),
+      "tasks": [
+        {
+          "title": "string - task title",
+          "description": "string - what the user needs to do",
+          "type": "PRACTICE | PROJECT | STUDY | CHALLENGE | MILESTONE",
+          "xpReward": number (skill's total XP divided among tasks),
+          "estimatedHours": number (optional)
+        }
+      ]
     }
   ]
-}`;
+}
+
+Task Requirements:
+- Each skill MUST have exactly 3 tasks (no more, no less)
+- Tasks should be specific, actionable, and progressive
+- Task types: STUDY (read/watch), PRACTICE (hands-on), PROJECT (build something), CHALLENGE (test knowledge), MILESTONE (major checkpoint)
+- Distribute skill's total XP evenly among tasks (e.g., if skill has 120 XP, each task gets 40 XP)
+- Task progression: STUDY → PRACTICE → PROJECT (easier to harder)`;
 
   // 调试日志 - 打印完整提示词
   console.log('\n=== AI REQUEST START ===');
@@ -256,7 +372,7 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
       ],
       // response_format: { type: 'json_object' }, // DeepSeek 不支持此参数，会导致请求挂起
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: parseInt(process.env.OPENAI_MAX_TOKENS || '16384'), // High limit for long skill trees
     });
 
     const duration = Date.now() - startTime;
@@ -350,9 +466,16 @@ Adjust the XP reward based on quality (base XP: ${baseXP}).`;
       max_tokens: 1024,
     });
 
-    const content = response.choices[0].message.content;
+    let content = response.choices[0].message.content;
     if (!content) {
       throw new Error('Empty response from AI');
+    }
+
+    // Remove markdown code blocks if present
+    content = content.trim();
+    const codeBlockMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch) {
+      content = codeBlockMatch[1].trim();
     }
 
     const parsed = JSON.parse(content);
