@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateSkillTree } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 
 const generateTreeSchema = z.object({
   goal: z.string().min(5, 'Goal must be at least 5 characters'),
@@ -10,13 +11,21 @@ const generateTreeSchema = z.object({
   preferences: z.array(z.string()).optional(),
 });
 
-// Temporary user ID for demo purposes (before authentication is implemented)
-const DEMO_USER_ID = 'demo-user';
-
 export async function POST(req: NextRequest) {
   console.log('\n🔵 [API] POST /api/ai/generate-tree - Request received');
 
   try {
+    // Get authenticated user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+
     const body = await req.json();
     console.log('📥 [API] Request body:', JSON.stringify(body, null, 2));
 
@@ -30,23 +39,11 @@ export async function POST(req: NextRequest) {
     const aiSkillTree = await generateSkillTree(validatedData);
     console.log('✓ [API] Skill tree generated successfully');
 
-    // Ensure demo user exists
-    console.log('👤 [API] Ensuring demo user exists...');
-    await prisma.user.upsert({
-      where: { id: DEMO_USER_ID },
-      create: {
-        id: DEMO_USER_ID,
-        email: 'demo@skillforge.dev',
-        name: 'Demo User',
-      },
-      update: {},
-    });
-
     // Save to database
     console.log('💾 [API] Saving skill tree to database...');
     const savedSkillTree = await prisma.skillTree.create({
       data: {
-        userId: DEMO_USER_ID,
+        userId,
         name: aiSkillTree.treeName,
         description: aiSkillTree.description,
         domain: aiSkillTree.domain,

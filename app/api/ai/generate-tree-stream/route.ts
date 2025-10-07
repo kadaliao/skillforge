@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { generateSkillTreeStream } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 
 const generateTreeSchema = z.object({
   goal: z.string().min(5, 'Goal must be at least 5 characters'),
@@ -9,9 +10,6 @@ const generateTreeSchema = z.object({
   weeklyHours: z.number().min(1).max(168),
   preferences: z.array(z.string()).optional(),
 });
-
-// Temporary user ID for demo purposes
-const DEMO_USER_ID = 'demo-user';
 
 export async function POST(req: NextRequest) {
   console.log('\n🔵 [API] POST /api/ai/generate-tree-stream - Request received');
@@ -26,6 +24,23 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        // Get authenticated user
+        const session = await auth();
+        if (!session?.user?.id) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                success: false,
+                error: 'Authentication required',
+              })}\n\n`
+            )
+          );
+          controller.close();
+          return;
+        }
+
+        const userId = session.user.id;
+
         const body = await req.json();
         send('📥 Request received');
 
@@ -37,23 +52,11 @@ export async function POST(req: NextRequest) {
         // Generate skill tree using AI with streaming
         const aiSkillTree = await generateSkillTreeStream(validatedData, send);
 
-        // Ensure demo user exists
-        send('👤 Setting up user...');
-        await prisma.user.upsert({
-          where: { id: DEMO_USER_ID },
-          create: {
-            id: DEMO_USER_ID,
-            email: 'demo@skillforge.dev',
-            name: 'Demo User',
-          },
-          update: {},
-        });
-
         // Save to database
         send('💾 Saving skill tree to database...');
         const savedSkillTree = await prisma.skillTree.create({
           data: {
-            userId: DEMO_USER_ID,
+            userId,
             name: aiSkillTree.treeName,
             description: aiSkillTree.description,
             domain: aiSkillTree.domain,

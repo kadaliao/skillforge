@@ -6,7 +6,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 00:30
+> **Last Updated:** 2025-10-07 15:45
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -95,7 +95,12 @@ npm install
 ```bash
 DATABASE_URL="your-postgresql-connection-string"
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_SECRET="your-secret-key"  # Generate with: openssl rand -base64 32
+
+# GitHub OAuth (Get from: https://github.com/settings/developers)
+AUTH_GITHUB_ID="your-github-oauth-client-id"
+AUTH_GITHUB_SECRET="your-github-oauth-client-secret"
+
 OPENAI_API_KEY="your-openai-api-key"
 # Optional: Custom API endpoint for OpenAI-compatible services
 OPENAI_BASE_URL="https://api.openai.com/v1"
@@ -143,18 +148,35 @@ npm run lint                  # Run ESLint
 /sync-all                     # Sync status to both CLAUDE.md and README.md
 ```
 
+### Phase 3 - Authentication & User Dashboard (✅ COMPLETED)
+
+1. **NextAuth.js v5 Authentication**
+   - GitHub OAuth provider integration
+   - JWT session strategy (edge runtime compatible)
+   - Protected routes via middleware
+   - User data persisted to database via Prisma adapter
+
+2. **User Dashboard** (`/dashboard`)
+   - Stats overview: Total trees, skills, completion percentage
+   - Grid view of all user's skill trees with progress bars
+   - Direct links to skill tree visualizations
+   - Empty state with CTA to create first tree
+
+3. **Authentication UI**
+   - Sign-in page with GitHub OAuth (`/auth/signin`)
+   - User navigation component with avatar dropdown
+   - Sign-out functionality
+   - Sticky header with navigation
+
+4. **Cloud Sync**
+   - All skill trees automatically linked to authenticated users
+   - API routes require authentication
+   - User-specific data isolation
+   - Removed demo user - all data is user-owned
+
 ## 📋 Roadmap
 
-### Phase 3 - User System & Data Persistence (NEXT)
-
-- [ ] NextAuth.js authentication
-  - Email/password login
-  - OAuth providers (Google, GitHub)
-- [ ] User dashboard
-- [ ] Save/load skill trees
-- [ ] Cloud sync functionality
-
-### Phase 4 - Gamification
+### Phase 4 - Gamification Mechanics (NEXT)
 
 - [ ] XP calculation system
 - [ ] Level progression
@@ -206,7 +228,8 @@ npm run lint                  # Run ESLint
 - Zustand
 
 **Authentication:**
-- NextAuth.js v5
+- NextAuth.js v5 with GitHub OAuth
+- JWT session strategy (edge runtime compatible)
 
 **Deployment:**
 - Vercel (planned)

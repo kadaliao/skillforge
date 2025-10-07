@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-07 00:30
+**Last Updated:** 2025-10-07 15:45
 
 ## Current Status
 
@@ -25,18 +25,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ Progress bars for XP and task completion on each skill node
 - ✅ Animated edges for IN_PROGRESS skills
 
-**Phase 3 (NEXT)** - Full authentication (NextAuth.js), user dashboard, cloud sync
+**Phase 3 Complete (100%)** - Full authentication and user dashboard:
+- ✅ NextAuth.js v5 with GitHub OAuth provider (`/lib/auth.ts`)
+- ✅ Protected routes via middleware (`middleware.ts`)
+- ✅ User dashboard at `/dashboard` with skill tree management
+- ✅ Authentication UI: sign-in page, user navigation dropdown with avatar
+- ✅ Cloud sync: All skill trees linked to authenticated users
+- ✅ Stats overview: Total trees, skills, and completion progress
+- ✅ API routes require authentication and link data to userId
+
+**Phase 4 (NEXT)** - Gamification mechanics (XP calculation, leveling, achievement unlocks, streaks)
 
 **Recent Changes** (last session):
-- Implemented streaming AI generation with real-time progress feedback (SSE/Server-Sent Events)
-- Added `generateSkillTreeStream()` function with token counting and progress callbacks
-- Created SkillTreeCanvas component with React Flow for interactive skill tree visualization
-- Built `/tree/[id]` route for displaying generated skill trees with full interactivity
-- Enhanced `/api/ai/generate-tree` to save skill trees to database with prerequisite connections
-- Added robust JSON extraction logic to handle markdown code blocks from AI responses
-- Configured PostgreSQL database and ran initial Prisma migrations
-- Fixed TypeScript strict mode issues (Zod `error.issues` instead of `error.errors`)
-- Updated frontend to display real-time streaming progress in monospace console-like UI
+- Implemented NextAuth.js v5 with GitHub OAuth authentication
+- Created auth configuration and route handlers (`/lib/auth.ts`, `/app/api/auth/[...nextauth]/route.ts`)
+- **Fixed edge runtime compatibility**: Using JWT sessions instead of database sessions (middleware works in edge runtime)
+- Added middleware to protect dashboard and API routes that modify user data
+- Updated skill tree generation APIs to link trees to authenticated users (removed demo user)
+- Built user dashboard page with stats overview (total trees, skills, completion %)
+- Created UserNav component with avatar, dropdown menu, and sign-out functionality
+- Added sign-in page with GitHub OAuth integration (`/app/auth/signin/page.tsx`)
+- Updated root layout with sticky header and navigation
+- Added GitHub OAuth environment variables to .env.example
 
 ## Project Overview
 
@@ -63,7 +73,9 @@ npm run lint                  # Run ESLint
 ### Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
 - `NEXTAUTH_URL`: App URL (http://localhost:3000 for local)
-- `NEXTAUTH_SECRET`: Secret key for NextAuth.js
+- `NEXTAUTH_SECRET`: Secret key for NextAuth.js (generate with `openssl rand -base64 32`)
+- `AUTH_GITHUB_ID`: GitHub OAuth App Client ID (get from https://github.com/settings/developers)
+- `AUTH_GITHUB_SECRET`: GitHub OAuth App Client Secret
 - `OPENAI_API_KEY`: OpenAI API key for AI features
 - `OPENAI_BASE_URL`: (Optional) Custom API endpoint for OpenAI-compatible services
 - `OPENAI_MODEL`: (Optional) Model name, defaults to `gpt-4o`
@@ -75,7 +87,7 @@ npm run lint                  # Run ESLint
 - **React 19** with TypeScript
 - **Prisma ORM** + PostgreSQL for data persistence
 - **OpenAI API** (with Zod schema validation) for AI skill tree generation and task evaluation
-- **NextAuth.js v5** for authentication (setup in progress)
+- **NextAuth.js v5** with GitHub OAuth authentication
 - **Zustand** for state management
 - **Tailwind CSS v4** + shadcn/ui components
 - **@xyflow/react** for visual skill tree rendering
@@ -143,20 +155,27 @@ app/
 │   │   ├── generate-tree/route.ts         # Legacy AI skill tree generation (non-streaming)
 │   │   ├── generate-tree-stream/route.ts  # Streaming AI generation with SSE
 │   │   └── evaluate-task/route.ts         # AI task evaluation
+│   ├── auth/[...nextauth]/route.ts        # NextAuth.js route handlers
 │   └── skill-tree/[id]/route.ts           # Fetch skill tree data
+├── auth/signin/page.tsx                   # Sign-in page with GitHub OAuth
+├── dashboard/page.tsx                     # User dashboard with skill tree list
 ├── tree/[id]/page.tsx                     # Skill tree visualization page
-├── layout.tsx                              # Root layout with theme provider
+├── layout.tsx                              # Root layout with header and navigation
 └── page.tsx                                # Landing page with SkillTreeGenerator
 
 components/
 ├── ui/                                     # shadcn/ui components (button, card, input, badge, etc.)
 ├── skill-tree-generator.tsx                # Main form with streaming progress display
-└── skill-tree-canvas.tsx                   # React Flow visualization component
+├── skill-tree-canvas.tsx                   # React Flow visualization component
+└── user-nav.tsx                            # User navigation with avatar and dropdown
 
 lib/
 ├── ai.ts               # AI client (generateSkillTreeStream, generateSkillTree, evaluateTaskCompletion)
+├── auth.ts             # NextAuth.js configuration with GitHub provider
 ├── prisma.ts           # Prisma client singleton
 └── utils.ts            # Utility functions (cn for class merging)
+
+middleware.ts           # Route protection middleware
 
 prisma/
 ├── schema.prisma       # Database schema with comprehensive gamification models
@@ -200,9 +219,9 @@ prisma/
 
 **Phase 2 (✅ COMPLETED)**: Interactive skill tree visualization with React Flow, streaming AI generation, database integration
 
-**Phase 3 (NEXT)**: Full authentication (NextAuth.js), user dashboard, cloud sync
+**Phase 3 (✅ COMPLETED)**: Full authentication (NextAuth.js), user dashboard, cloud sync
 
-**Phase 4**: Gamification mechanics (XP calculation, leveling, achievement unlocks, streaks)
+**Phase 4 (NEXT)**: Gamification mechanics (XP calculation, leveling, achievement unlocks, streaks)
 
 **Phase 5**: Task management system with AI evaluation
 

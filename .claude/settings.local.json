@@ -10,7 +10,12 @@
       "Bash(brew services:*)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(psql:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash([ -f .env.example ])",
+      "Bash(npx prisma generate:*)",
+      "Bash(git add:*)",
+      "Bash(cat:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
