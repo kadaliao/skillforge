@@ -6,7 +6,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 19:45
+> **Last Updated:** 2025-10-08 12:40
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -258,12 +258,19 @@ npm run lint                  # Run ESLint
 
 ## 📋 Roadmap
 
-### Phase 6 - Polish & Deploy (IN PROGRESS)
+### Phase 6 - Polish & Production Readiness (✅ COMPLETED)
 
 - [x] **UI/UX Overhaul** - Replaced complex React Flow with simple card layout
 - [x] **Hierarchical Skill Tree** - Level-based grouping with prerequisite arrows
 - [x] **Consistent Layout** - Unified spacing and responsive design across all pages
 - [x] **Improved Navigation** - Cleaner header, optimized buttons, mobile-friendly
+- [x] **AI-Generated Task Checklists** - Context-aware completion checkboxes reduce manual typing
+  - Examples: Writing tasks → ["完成文案改写", "标题吸引力测试"], Coding tasks → ["代码已测试", "功能可演示"]
+  - Zero additional AI cost (generated during initial skill tree creation)
+  - Fallback to rule-based options for legacy tasks
+
+### Phase 7 - Advanced Features (IN PROGRESS)
+
 - [ ] Framer Motion animations
   - Level up effects
   - Skill unlock animations
@@ -316,8 +323,9 @@ Key models:
   - Visual: positionX/positionY for React Flow rendering
 - **Task**: Actionable items to complete skills
   - Types: PRACTICE, PROJECT, STUDY, CHALLENGE, MILESTONE
-  - Fields: order (for manual reordering), submission, notes, estimatedHours
+  - Fields: order (for manual reordering), submission, notes, estimatedHours, checklistOptions (JSON array)
   - AI evaluation: qualityScore, aiFeedback
+  - AI-generated: 3-6 context-aware completion checkboxes
 - **Activity**: Audit log for all user actions (TASK_COMPLETE, STUDY_SESSION, LEVEL_UP, etc.)
   - Tracks XP gains, duration, timestamps
 - **Achievement** + **UserAchievement**: Badge system with rarity (COMMON, RARE, EPIC, LEGENDARY)

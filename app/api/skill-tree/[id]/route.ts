@@ -27,6 +27,7 @@ export async function GET(
                 completed: true,
                 xpReward: true,
                 type: true,
+                checklistOptions: true,
               },
             },
           },

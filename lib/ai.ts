@@ -15,6 +15,7 @@ const TaskSchema = z.object({
   type: z.enum(['PRACTICE', 'PROJECT', 'STUDY', 'CHALLENGE', 'MILESTONE']),
   xpReward: z.number(),
   estimatedHours: z.number().optional(),
+  checklistOptions: z.array(z.string()).min(3).max(6).optional(), // AI-generated completion checklist
 });
 
 const SkillNodeSchema = z.object({
@@ -330,7 +331,8 @@ CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no 
           "description": "string - what the user needs to do",
           "type": "PRACTICE | PROJECT | STUDY | CHALLENGE | MILESTONE",
           "xpReward": number (skill's total XP divided among tasks),
-          "estimatedHours": number (optional)
+          "estimatedHours": number (optional),
+          "checklistOptions": ["3-6 quick completion checkboxes tailored to this task"]
         }
       ]
     }
@@ -342,7 +344,18 @@ Task Requirements:
 - Tasks should be specific, actionable, and progressive
 - Task types: STUDY (read/watch), PRACTICE (hands-on), PROJECT (build something), CHALLENGE (test knowledge), MILESTONE (major checkpoint)
 - Distribute skill's total XP evenly among tasks (e.g., if skill has 120 XP, each task gets 40 XP)
-- Task progression: STUDY → PRACTICE → PROJECT (easier to harder)`;
+- Task progression: STUDY → PRACTICE → PROJECT (easier to harder)
+
+Checklist Options for Each Task:
+- Provide 3-6 quick completion checkboxes tailored to the specific task
+- Checkboxes should represent common ways to complete the task (reduce manual typing)
+- Examples based on task type:
+  * STUDY tasks: ["阅读/观看完成", "做了学习笔记", "理解关键知识点", "完成课后思考题"]
+  * PRACTICE tasks: ["完成所有练习题", "通过自测验证", "无错误运行代码", "理解核心概念"]
+  * PROJECT tasks: ["完成核心功能开发", "代码已测试通过", "文档已更新", "功能可正常演示"]
+  * CHALLENGE tasks: ["挑战题目已完成", "通过所有测试用例", "代码性能优化达标"]
+  * MILESTONE tasks: ["阶段目标已达成", "输出可验证成果", "完成复盘总结"]
+- Adapt checkboxes to the specific task context (e.g., for a "写作练习" task: ["完成文案改写", "标题吸引力测试", "字数达标"])`;
 
   // 调试日志 - 打印完整提示词
   console.log('\n=== AI REQUEST START ===');

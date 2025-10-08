@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-07 19:45
+**Last Updated:** 2025-10-08 12:40
 
 ## Current Status
 
@@ -58,31 +58,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **Analytics Page**: `/analytics` with tabbed interface, XP progression charts, skill status distribution, completion rates
 - ✅ **Database Schema**: Added Task.order field with composite index for efficient ordering queries
 
-**Phase 6 (IN PROGRESS)** - Polish and production readiness:
+**Phase 6 Complete (100%)** - Polish and production readiness:
 - ✅ **UI/UX Overhaul**: Replaced complex React Flow canvas with simple hierarchical card layout
 - ✅ **Skill Tree Redesign**: Level-based grouping with clear prerequisite arrows (↑ badges)
 - ✅ **Consistent Layout**: Unified spacing (py-6 px-4) and responsive design across all pages
 - ✅ **Improved Navigation**: Cleaner header (h-14), optimized button sizes, mobile-friendly layouts
+- ✅ **AI-Generated Task Checklists**: Context-aware completion options generated during skill tree creation
 - ⏳ **Animations**: Smooth transitions and micro-interactions (pending)
 - ⏳ **Mobile Optimization**: Touch-friendly controls and gestures (pending)
 - ⏳ **Deployment**: Production build and hosting setup (pending)
 
 **Recent Changes** (this session):
-- **Skill Tree Visualization Overhaul**: Replaced React Flow canvas with `SkillTreeSimple` component using traditional HTML/CSS
-  - Hierarchical level-based layout with clear visual grouping
-  - Prerequisites shown as clickable ↑ badges for easy navigation
-  - Removed unnecessary complexity (zoom, pan, drag) for better UX
-  - Fixed dagre auto-layout issues by removing hardcoded grid positions
-- **Global Layout Improvements**:
-  - Unified all pages with `container mx-auto py-6 px-4` pattern
-  - Reduced header height (h-16 → h-14) and font sizes for better density
-  - Made all pages responsive (mobile-first approach)
-  - Fixed duplicate logo issue on landing page
-- **Component Optimizations**:
-  - Skill cards: Smaller padding (p-4 → p-3), compact fonts, better information hierarchy
-  - Achievement cards: Tighter spacing, smaller badges (text-[10px]), improved status indicators
-  - Dashboard: Smaller buttons (size="sm"), responsive stats layout
-  - Analytics: Added descriptive subtitles, responsive headers
+- **AI-Generated Task Completion Checklists**:
+  - Added `Task.checklistOptions` JSON field to database schema
+  - Extended AI prompt to generate 3-6 context-aware checkbox options per task
+  - Examples: Writing tasks → ["完成文案改写", "标题吸引力测试"], Coding tasks → ["代码已测试", "功能可演示"]
+  - Updated TaskCompletionDialog with checkbox UI + auto-submission formatting
+  - Fallback to rule-based options for legacy tasks without AI-generated checklists
+  - Zero additional AI cost (options generated during initial skill tree creation)
+  - Migration: `20251008043426_add_task_checklist_options`
+  - New components: `components/ui/checkbox.tsx`, `lib/task-checklist.ts` (fallback rules)
+
+**Previous Session Changes**:
+- **Skill Tree Visualization Overhaul**: Replaced React Flow canvas with `SkillTreeSimple` component
+- **Global Layout Improvements**: Unified spacing (py-6 px-4), responsive design
+- **Component Optimizations**: Smaller padding, compact fonts, better hierarchy
 
 ## Project Overview
 
@@ -173,8 +173,9 @@ Key models and relationships:
 - **Task**: Actionable items to complete skills
   - Belongs to: Skill
   - Type enum: PRACTICE, PROJECT, STUDY, CHALLENGE, MILESTONE
-  - Fields: order (for manual reordering), submission, notes, estimatedHours
+  - Fields: order (for manual reordering), submission, notes, estimatedHours, checklistOptions (JSON array)
   - AI evaluation: qualityScore, aiFeedback
+  - AI-generated: checklistOptions (3-6 context-aware completion checkboxes)
 
 - **Activity**: Audit log for all user actions
   - Type enum: TASK_COMPLETE, STUDY_SESSION, MANUAL_LOG, MILESTONE_REACHED, LEVEL_UP, SKILL_UNLOCKED, SKILL_MASTERED
@@ -214,18 +215,19 @@ app/
 └── page.tsx                                # Landing page with SkillTreeGenerator
 
 components/
-├── ui/                                     # shadcn/ui components (button, card, input, badge, select, etc.)
+├── ui/                                     # shadcn/ui components (button, card, input, badge, select, checkbox, etc.)
 ├── skill-tree-generator.tsx                # Main form with streaming progress display
 ├── skill-tree-canvas.tsx                   # Legacy React Flow visualization (deprecated)
 ├── skill-tree-simple.tsx                   # Current: Simple hierarchical card-based skill tree layout
-├── task-completion-dialog.tsx              # Task completion modal with AI evaluation
+├── task-completion-dialog.tsx              # Task completion modal with AI evaluation + checklist UI
 ├── task-create-dialog.tsx                  # Task creation modal with form validation
 └── user-nav.tsx                            # User navigation with stats display and dropdown
 
 lib/
-├── ai.ts               # AI client (generateSkillTreeStream, generateSkillTree, evaluateTaskCompletion)
+├── ai.ts               # AI client (generateSkillTreeStream with checklistOptions, evaluateTaskCompletion)
 ├── auth.ts             # NextAuth.js configuration with GitHub provider
 ├── gamification.ts     # XP formulas, leveling, streaks, achievement definitions
+├── task-checklist.ts   # Fallback checklist options for legacy tasks
 ├── prisma.ts           # Prisma client singleton
 └── utils.ts            # Utility functions (cn for class merging)
 
@@ -280,4 +282,6 @@ prisma/
 
 **Phase 5 (✅ COMPLETED)**: Task management enhancements (manual task creation, bulk operations, progress analytics)
 
-**Phase 6 (NEXT)**: Polish and production readiness (animations, mobile optimization, deployment)
+**Phase 6 (✅ COMPLETED)**: Polish and production readiness (UI overhaul, responsive design, AI-generated task checklists)
+
+**Phase 7 (NEXT)**: Advanced features (animations, mobile optimization, deployment)

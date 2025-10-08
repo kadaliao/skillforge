@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface Task {
@@ -15,6 +16,7 @@ interface Task {
   type: string;
   xpReward: number;
   completed: boolean;
+  checklistOptions?: string[] | null; // AI-generated checklist
 }
 
 interface TaskCompletionDialogProps {
@@ -54,6 +56,18 @@ interface TaskCompletionResult {
   }>;
 }
 
+// Fallback options when AI doesn't provide checklistOptions (for old data)
+function getFallbackOptions(taskType: string): string[] {
+  const fallbackMap: Record<string, string[]> = {
+    PRACTICE: ["完成所有练习题", "通过自测验证", "理解核心概念"],
+    PROJECT: ["完成核心功能开发", "代码已测试通过", "功能可正常演示"],
+    STUDY: ["阅读/观看完成", "做了学习笔记", "理解关键知识点"],
+    CHALLENGE: ["挑战题目已完成", "通过所有测试用例", "理解解题思路"],
+    MILESTONE: ["阶段目标已达成", "输出可验证成果", "完成复盘总结"],
+  };
+  return fallbackMap[taskType] || ["任务已完成", "理解核心概念", "做了笔记总结"];
+}
+
 export function TaskCompletionDialog({
   task,
   open,
@@ -64,6 +78,23 @@ export function TaskCompletionDialog({
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TaskCompletionResult | null>(null);
+  const [selectedChecklist, setSelectedChecklist] = useState<string[]>([]);
+  const [manualSubmission, setManualSubmission] = useState(""); // 用户手动输入的部分
+
+  // 从数据库获取 AI 生成的勾选选项，如果没有则使用规则引擎作为 fallback
+  const checklistOptions = task.checklistOptions && task.checklistOptions.length > 0
+    ? task.checklistOptions
+    : getFallbackOptions(task.type);
+
+  // 当勾选项变化时，自动更新 submission
+  useEffect(() => {
+    const checklistText = selectedChecklist.map(opt => `✓ ${opt}`).join('\n');
+    if (checklistText) {
+      setSubmission(manualSubmission ? `${checklistText}\n\n${manualSubmission}` : checklistText);
+    } else {
+      setSubmission(manualSubmission);
+    }
+  }, [selectedChecklist, manualSubmission]);
 
   const handleComplete = async () => {
     setLoading(true);
@@ -112,8 +143,18 @@ export function TaskCompletionDialog({
   const handleClose = () => {
     setSubmission("");
     setNotes("");
+    setManualSubmission("");
+    setSelectedChecklist([]);
     setResult(null);
     onOpenChange(false);
+  };
+
+  const handleChecklistToggle = (option: string) => {
+    setSelectedChecklist(prev =>
+      prev.includes(option)
+        ? prev.filter(item => item !== option)
+        : [...prev, option]
+    );
   };
 
   return (
@@ -135,21 +176,50 @@ export function TaskCompletionDialog({
               </span>
             </div>
 
+            {/* Checklist Options */}
+            {checklistOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label>快速标记完成方式</Label>
+                <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                  {checklistOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={option}
+                        checked={selectedChecklist.includes(option)}
+                        onCheckedChange={() => handleChecklistToggle(option)}
+                      />
+                      <label
+                        htmlFor={option}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {option}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="submission">
-                Submission (optional)
+                补充说明 (optional)
                 <span className="text-xs text-muted-foreground ml-2">
                   AI will evaluate your work and adjust XP accordingly
                 </span>
               </Label>
               <Textarea
                 id="submission"
-                placeholder="Describe what you did, share a link to your work, or paste code..."
-                value={submission}
-                onChange={(e) => setSubmission(e.target.value)}
-                rows={6}
+                placeholder="补充细节、分享链接或粘贴代码..."
+                value={manualSubmission}
+                onChange={(e) => setManualSubmission(e.target.value)}
+                rows={4}
                 className="resize-none"
               />
+              {selectedChecklist.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  已勾选 {selectedChecklist.length} 项将自动添加到提交内容
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

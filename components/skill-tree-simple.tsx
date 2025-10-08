@@ -27,6 +27,7 @@ type SkillData = {
     completed: boolean;
     xpReward: number;
     type: string;
+    checklistOptions?: string[] | null;
   }[];
 };
 
