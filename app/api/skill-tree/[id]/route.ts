@@ -20,11 +20,23 @@ export async function DELETE(
       where: { id },
       include: {
         skills: {
-          select: { id: true },
-        },
-        _count: {
-          select: {
-            skills: true,
+          include: {
+            prerequisites: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            tasks: {
+              select: {
+                id: true,
+                title: true,
+                completed: true,
+                xpReward: true,
+                type: true,
+                checklistOptions: true,
+              },
+            },
           },
         },
       },
@@ -95,7 +107,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: 'Skill tree deleted',
-      skillsDeleted: skillTree._count.skills,
+      skillsDeleted: skillTree.skills.length,
       tasksDeleted: tasksCount,
       xpDeducted: xpToDeduct,
     });

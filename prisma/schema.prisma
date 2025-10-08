@@ -179,6 +179,9 @@ model Task {
   qualityScore    Float?   // 1-10
   aiFeedback      String?  @db.Text
 
+  // AI-generated checklist options for task completion
+  checklistOptions Json?   // ["完成文案改写", "标题吸引力测试", ...]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

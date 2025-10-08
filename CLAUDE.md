@@ -64,6 +64,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **Consistent Layout**: Unified spacing (py-6 px-4) and responsive design across all pages
 - ✅ **Improved Navigation**: Cleaner header (h-14), optimized button sizes, mobile-friendly layouts
 - ✅ **Personalized AI Generation**: Multi-dimensional context input (background, existing skills, learning preferences)
+- ✅ **AI-Generated Task Checklists**: Context-aware completion options generated during skill tree creation
 
 **Phase 7 Complete (100%)** - Template sharing and management:
 - ✅ **Template Library**: `/templates` page with public skill tree gallery
@@ -94,6 +95,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - DELETE endpoint with ownership verification and cascade delete
   - Destructive confirmation dialog with warnings for public templates
   - Dashboard integration with delete option in dropdown menu
+- **AI-Generated Task Completion Checklists** (Phase 6):
+  - Added `Task.checklistOptions` JSON field to database schema
+  - Extended AI prompt to generate 3-6 context-aware checkbox options per task
+  - Examples: Writing tasks → ["完成文案改写", "标题吸引力测试"], Coding tasks → ["代码已测试", "功能可演示"]
+  - Updated TaskCompletionDialog with checkbox UI + auto-submission formatting
+  - Fallback to rule-based options for legacy tasks without AI-generated checklists
+  - Zero additional AI cost (options generated during initial skill tree creation)
+  - Migration: `20251008043426_add_task_checklist_options`
+  - New components: `components/ui/checkbox.tsx`, `lib/task-checklist.ts` (fallback rules)
 
 **Previous Session Changes**:
 - **Personalized AI Generation** (Phase 6):
@@ -217,8 +227,9 @@ Key models and relationships:
 - **Task**: Actionable items to complete skills
   - Belongs to: Skill
   - Type enum: PRACTICE, PROJECT, STUDY, CHALLENGE, MILESTONE
-  - Fields: order (for manual reordering), submission, notes, estimatedHours
+  - Fields: order (for manual reordering), submission, notes, estimatedHours, checklistOptions (JSON array)
   - AI evaluation: qualityScore, aiFeedback
+  - AI-generated: checklistOptions (3-6 context-aware completion checkboxes)
 
 - **Activity**: Audit log for all user actions
   - Type enum: TASK_COMPLETE, STUDY_SESSION, MANUAL_LOG, MILESTONE_REACHED, LEVEL_UP, SKILL_UNLOCKED, SKILL_MASTERED
@@ -263,20 +274,21 @@ app/
 └── page.tsx                                # Landing page with SkillTreeGenerator
 
 components/
-├── ui/                                     # shadcn/ui components (button, card, input, badge, select, alert, alert-dialog, collapsible, etc.)
+├── ui/                                     # shadcn/ui components (button, card, input, badge, select, alert, alert-dialog, checkbox, collapsible, etc.)
 ├── skill-tree-generator.tsx                # Main form with streaming progress + personalization inputs
 ├── skill-tree-canvas.tsx                   # Legacy React Flow visualization (deprecated)
 ├── skill-tree-simple.tsx                   # Current: Simple hierarchical card-based skill tree layout
-├── task-completion-dialog.tsx              # Task completion modal with AI evaluation
+├── task-completion-dialog.tsx              # Task completion modal with AI evaluation + checklist UI
 ├── task-create-dialog.tsx                  # Task creation modal with form validation
 ├── clone-template-dialog.tsx               # Template cloning with custom naming
 ├── share-template-button.tsx               # Dropdown menu for share/unshare/delete actions
 └── user-nav.tsx                            # User navigation with stats display and dropdown
 
 lib/
-├── ai.ts               # AI client (generateSkillTreeStream, generateSkillTree, evaluateTaskCompletion)
+├── ai.ts               # AI client (generateSkillTreeStream with checklistOptions, evaluateTaskCompletion)
 ├── auth.ts             # NextAuth.js configuration with GitHub provider
 ├── gamification.ts     # XP formulas, leveling, streaks, achievement definitions
+├── task-checklist.ts   # Fallback checklist options for legacy tasks
 ├── prisma.ts           # Prisma client singleton
 └── utils.ts            # Utility functions (cn for class merging)
 
@@ -331,7 +343,7 @@ prisma/
 
 **Phase 5 (✅ COMPLETED)**: Task management enhancements (manual task creation, bulk operations, progress analytics)
 
-**Phase 6 (✅ COMPLETED)**: Polish and UI improvements (hierarchical layout, responsive design, personalized AI generation)
+**Phase 6 (✅ COMPLETED)**: Polish and UI improvements (hierarchical layout, responsive design, personalized AI generation, AI-generated task checklists)
 
 **Phase 7 (✅ COMPLETED)**: Template sharing and management (public templates, cloning, deletion)
 

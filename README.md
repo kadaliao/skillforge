@@ -12,6 +12,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 - **Template System** - Share skill trees as public templates, clone and customize community templates
 - **Personalized AI Generation** - Optional context fields for background, existing skills, and learning preferences
 - **Smart Skill Tree Adaptation** - AI skips redundant content, adjusts difficulty, matches resources to learning style
+- **AI-Generated Task Checklists** - Context-aware completion checkboxes reduce manual typing
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -277,6 +278,10 @@ npm run lint                  # Run ESLint
   - Collapsible optional section with 3 natural language text fields
   - Background, existing skills, and learning preferences
   - AI adapts starting point, skips known content, matches resources to learning style
+- [x] **AI-Generated Task Checklists** - Context-aware completion checkboxes reduce manual typing
+  - Examples: Writing tasks → ["完成文案改写", "标题吸引力测试"], Coding tasks → ["代码已测试", "功能可演示"]
+  - Zero additional AI cost (generated during initial skill tree creation)
+  - Fallback to rule-based options for legacy tasks
 
 ### Phase 7 - Template Sharing & Management (✅ COMPLETED)
 
@@ -290,6 +295,7 @@ npm run lint                  # Run ESLint
 ## 📋 Roadmap
 
 ### Phase 8 - Advanced Features (NEXT)
+
 - [ ] Framer Motion animations
   - Level up effects
   - Skill unlock animations
@@ -342,8 +348,9 @@ Key models:
   - Visual: positionX/positionY for React Flow rendering
 - **Task**: Actionable items to complete skills
   - Types: PRACTICE, PROJECT, STUDY, CHALLENGE, MILESTONE
-  - Fields: order (for manual reordering), submission, notes, estimatedHours
+  - Fields: order (for manual reordering), submission, notes, estimatedHours, checklistOptions (JSON array)
   - AI evaluation: qualityScore, aiFeedback
+  - AI-generated: 3-6 context-aware completion checkboxes
 - **Activity**: Audit log for all user actions (TASK_COMPLETE, STUDY_SESSION, LEVEL_UP, etc.)
   - Tracks XP gains, duration, timestamps
 - **Achievement** + **UserAchievement**: Badge system with rarity (COMMON, RARE, EPIC, LEGENDARY)
