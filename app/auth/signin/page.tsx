@@ -1,6 +1,9 @@
 import { signIn } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+
+const isDev = process.env.NODE_ENV === "development"
 
 export default function SignInPage() {
   return (
@@ -12,7 +15,38 @@ export default function SignInPage() {
             Sign in to create personalized skill trees and track your learning progress
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Dev Mode: Test Login */}
+          {isDev && (
+            <form
+              action={async (formData: FormData) => {
+                "use server"
+                await signIn("dev-login", {
+                  email: formData.get("email"),
+                  redirectTo: "/",
+                })
+              }}
+              className="space-y-3"
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  开发测试登录（仅本地）
+                </label>
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="test@dev.local"
+                  defaultValue="test@dev.local"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" variant="outline">
+                🔧 测试登录
+              </Button>
+            </form>
+          )}
+
+          {/* Production: GitHub OAuth */}
           <form
             action={async () => {
               "use server"

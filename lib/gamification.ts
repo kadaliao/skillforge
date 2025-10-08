@@ -192,11 +192,19 @@ export interface AchievementCheckData {
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   // COMMON - First steps
   {
-    id: "first-skill",
+    id: "first-task",
     name: "First Steps",
-    description: "Complete your first skill",
+    description: "Complete your first task",
     rarity: "COMMON",
     iconName: "🌱",
+    checkCondition: (data) => data.tasks.filter(t => t.completedAt).length >= 1
+  },
+  {
+    id: "first-skill",
+    name: "Skill Complete",
+    description: "Fully complete your first skill (all tasks done)",
+    rarity: "COMMON",
+    iconName: "✅",
     checkCondition: (data) => data.skills.filter(s => s.completedAt).length >= 1
   },
   {
@@ -206,14 +214,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     rarity: "COMMON",
     iconName: "🌳",
     checkCondition: (data) => data.skillTrees.length >= 1
-  },
-  {
-    id: "first-task",
-    name: "Task Master",
-    description: "Complete your first task",
-    rarity: "COMMON",
-    iconName: "✅",
-    checkCondition: (data) => data.tasks.filter(t => t.completedAt).length >= 1
   },
 
   // RARE - Consistency
