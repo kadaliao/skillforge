@@ -6,6 +6,9 @@ import {
   calculateSkillLevel,
   xpForSkillLevel,
   calculateStreak,
+  checkNewAchievements,
+  ACHIEVEMENT_DEFINITIONS,
+  type AchievementCheckData,
 } from "@/lib/gamification";
 import { z } from "zod";
 
@@ -200,10 +203,93 @@ export async function POST(req: NextRequest) {
         newUserTotalXP: newTotalXP,
         skillsUpdated: updatedSkills.length,
         currentStreak: streakUpdate.currentStreak,
+        longestStreak: streakUpdate.longestStreak,
       };
     });
 
-    return NextResponse.json(result);
+    // ========================================================================
+    // 7. CHECK ACHIEVEMENTS (after transaction)
+    // ========================================================================
+
+    const [skillTrees, skills, tasks, activities, earnedAchievements] = await Promise.all([
+      prisma.skillTree.findMany({
+        where: { userId },
+        select: { id: true },
+      }),
+      prisma.skill.findMany({
+        where: { tree: { userId } },
+        select: { id: true, status: true, completedAt: true, treeId: true },
+      }),
+      prisma.task.findMany({
+        where: { skill: { tree: { userId } } },
+        select: { id: true, completedAt: true },
+      }),
+      prisma.activity.findMany({
+        where: { userId },
+        select: { type: true, createdAt: true },
+      }),
+      prisma.userAchievement.findMany({
+        where: { userId },
+        include: { achievement: true },
+      }),
+    ]);
+
+    const achievementData: AchievementCheckData = {
+      user: {
+        totalXP: result.newUserTotalXP,
+        level: result.newUserLevel,
+        currentStreak: result.currentStreak,
+        longestStreak: result.longestStreak,
+      },
+      skillTrees,
+      skills,
+      tasks,
+      activities,
+    };
+
+    const newAchievementIds = checkNewAchievements(
+      achievementData,
+      earnedAchievements.map((ua) => ua.achievement.id)
+    );
+
+    const newAchievements = [];
+
+    for (const achievementId of newAchievementIds) {
+      const achievementDef = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === achievementId);
+      if (!achievementDef) continue;
+
+      // Get or create achievement in database
+      let achievement = await prisma.achievement.findUnique({
+        where: { id: achievementId },
+      });
+
+      if (!achievement) {
+        achievement = await prisma.achievement.create({
+          data: {
+            id: achievementId,
+            name: achievementDef.name,
+            description: achievementDef.description,
+            rarity: achievementDef.rarity,
+            iconName: achievementDef.iconName,
+          },
+        });
+      }
+
+      // Award to user
+      await prisma.userAchievement.create({
+        data: {
+          userId,
+          achievementId: achievement.id,
+        },
+      });
+
+      newAchievements.push(achievement);
+    }
+
+    return NextResponse.json({
+      ...result,
+      newAchievements,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
