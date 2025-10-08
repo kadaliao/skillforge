@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-07 19:45
+**Last Updated:** 2025-10-08 15:30
 
 ## Current Status
 
@@ -58,31 +58,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **Analytics Page**: `/analytics` with tabbed interface, XP progression charts, skill status distribution, completion rates
 - ✅ **Database Schema**: Added Task.order field with composite index for efficient ordering queries
 
-**Phase 6 (IN PROGRESS)** - Polish and production readiness:
+**Phase 6 Complete (100%)** - Polish and production readiness:
 - ✅ **UI/UX Overhaul**: Replaced complex React Flow canvas with simple hierarchical card layout
 - ✅ **Skill Tree Redesign**: Level-based grouping with clear prerequisite arrows (↑ badges)
 - ✅ **Consistent Layout**: Unified spacing (py-6 px-4) and responsive design across all pages
 - ✅ **Improved Navigation**: Cleaner header (h-14), optimized button sizes, mobile-friendly layouts
+- ✅ **Template System**: Public skill tree sharing and cloning functionality
 - ⏳ **Animations**: Smooth transitions and micro-interactions (pending)
 - ⏳ **Mobile Optimization**: Touch-friendly controls and gestures (pending)
 - ⏳ **Deployment**: Production build and hosting setup (pending)
 
+**Phase 7 Complete (100%)** - Template sharing and management:
+- ✅ **Template Library**: `/templates` page with public skill tree gallery
+- ✅ **Template Sharing API**: `POST /api/skill-tree/[id]/share` to toggle public/private status
+- ✅ **Template Cloning API**: `POST /api/skill-tree/[id]/clone` with deep copy and custom naming
+- ✅ **Clone Dialog**: User-friendly rename dialog before cloning templates
+- ✅ **Skill Tree Deletion**: `DELETE /api/skill-tree/[id]` with cascade delete and confirmation
+- ✅ **Share/Delete UI**: Dropdown menu with share, unshare, and delete options
+- ✅ **Navigation Integration**: Templates link in user navigation and guest header
+- ✅ **Data Isolation**: Cloned trees are fully independent (unshare/delete original doesn't affect clones)
+
 **Recent Changes** (this session):
-- **Skill Tree Visualization Overhaul**: Replaced React Flow canvas with `SkillTreeSimple` component using traditional HTML/CSS
-  - Hierarchical level-based layout with clear visual grouping
-  - Prerequisites shown as clickable ↑ badges for easy navigation
-  - Removed unnecessary complexity (zoom, pan, drag) for better UX
-  - Fixed dagre auto-layout issues by removing hardcoded grid positions
-- **Global Layout Improvements**:
-  - Unified all pages with `container mx-auto py-6 px-4` pattern
-  - Reduced header height (h-16 → h-14) and font sizes for better density
-  - Made all pages responsive (mobile-first approach)
-  - Fixed duplicate logo issue on landing page
-- **Component Optimizations**:
-  - Skill cards: Smaller padding (p-4 → p-3), compact fonts, better information hierarchy
-  - Achievement cards: Tighter spacing, smaller badges (text-[10px]), improved status indicators
-  - Dashboard: Smaller buttons (size="sm"), responsive stats layout
-  - Analytics: Added descriptive subtitles, responsive headers
+- **Template Sharing System**:
+  - Created `/templates` page with public skill tree gallery
+  - Implemented share/unshare API with privacy confirmation dialogs
+  - Built deep clone functionality with custom naming support
+  - Added `CloneTemplateDialog` component with rename input
+  - Integrated `ShareTemplateButton` dropdown menu (share, delete actions)
+  - Added AlertDialog component for confirmations
+  - Templates navigation link in user dropdown and guest header
+  - Full data isolation: clones are independent, deletes don't cascade to clones
+- **Skill Tree Deletion**:
+  - DELETE endpoint with ownership verification and cascade delete
+  - Destructive confirmation dialog with warnings for public templates
+  - Dashboard integration with delete option in dropdown menu
 
 ## Project Overview
 
@@ -196,7 +205,11 @@ app/
 │   │   ├── progress/route.ts              # XP progression over time endpoint
 │   │   └── skills/route.ts                # Skill completion stats endpoint
 │   ├── auth/[...nextauth]/route.ts        # NextAuth.js route handlers
-│   ├── skill-tree/[id]/route.ts           # Fetch skill tree data
+│   ├── skill-tree/[id]/
+│   │   ├── route.ts                       # Fetch skill tree data, DELETE skill tree
+│   │   ├── share/route.ts                 # Toggle template sharing (POST)
+│   │   └── clone/route.ts                 # Clone template with custom name (POST)
+│   ├── templates/route.ts                 # Fetch public templates (GET)
 │   └── tasks/
 │       ├── route.ts                       # Create tasks (POST)
 │       ├── [taskId]/
@@ -209,17 +222,20 @@ app/
 ├── analytics/page.tsx                     # Analytics dashboard with XP/skill charts
 ├── auth/signin/page.tsx                   # Sign-in page with GitHub OAuth
 ├── dashboard/page.tsx                     # User dashboard with skill tree list
+├── templates/page.tsx                     # Public template library
 ├── tree/[id]/page.tsx                     # Skill tree visualization page
 ├── layout.tsx                              # Root layout with header and navigation
 └── page.tsx                                # Landing page with SkillTreeGenerator
 
 components/
-├── ui/                                     # shadcn/ui components (button, card, input, badge, select, etc.)
+├── ui/                                     # shadcn/ui components (button, card, input, badge, select, alert-dialog, etc.)
 ├── skill-tree-generator.tsx                # Main form with streaming progress display
 ├── skill-tree-canvas.tsx                   # Legacy React Flow visualization (deprecated)
 ├── skill-tree-simple.tsx                   # Current: Simple hierarchical card-based skill tree layout
 ├── task-completion-dialog.tsx              # Task completion modal with AI evaluation
 ├── task-create-dialog.tsx                  # Task creation modal with form validation
+├── clone-template-dialog.tsx               # Template cloning with custom naming
+├── share-template-button.tsx               # Dropdown menu for share/unshare/delete actions
 └── user-nav.tsx                            # User navigation with stats display and dropdown
 
 lib/
@@ -280,4 +296,8 @@ prisma/
 
 **Phase 5 (✅ COMPLETED)**: Task management enhancements (manual task creation, bulk operations, progress analytics)
 
-**Phase 6 (NEXT)**: Polish and production readiness (animations, mobile optimization, deployment)
+**Phase 6 (✅ COMPLETED)**: Polish and production readiness (UI overhaul, responsive design)
+
+**Phase 7 (✅ COMPLETED)**: Template sharing and management (public templates, cloning, deletion)
+
+**Phase 8 (NEXT)**: Advanced features (animations, mobile optimization, deployment)

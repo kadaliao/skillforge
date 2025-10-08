@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function DELETE(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -19,7 +19,6 @@ export async function DELETE(
       where: { id },
       select: {
         userId: true,
-        name: true,
         isTemplate: true,
         isPublic: true,
       },
@@ -33,21 +32,30 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Delete the skill tree (cascade delete handles skills, tasks, etc.)
-    await prisma.skillTree.delete({
+    // Toggle template status
+    const isSharing = !skillTree.isTemplate || !skillTree.isPublic;
+
+    const updatedTree = await prisma.skillTree.update({
       where: { id },
+      data: {
+        isTemplate: isSharing,
+        isPublic: isSharing,
+      },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Skill tree deleted successfully",
+      data: updatedTree,
+      message: isSharing
+        ? "Skill tree shared as public template"
+        : "Skill tree removed from templates",
     });
   } catch (error) {
-    console.error("[API] Error deleting skill tree:", error);
+    console.error("[API] Error sharing skill tree:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to delete skill tree",
+        error: error instanceof Error ? error.message : "Failed to share skill tree",
       },
       { status: 500 }
     );

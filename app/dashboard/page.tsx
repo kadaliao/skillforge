@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ShareTemplateButton } from "@/components/share-template-button"
 import Link from "next/link"
 
 export default async function DashboardPage() {
@@ -123,18 +124,27 @@ export default async function DashboardPage() {
               return (
                 <Card key={tree.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1 flex-1">
                         <CardTitle className="line-clamp-1">{tree.name}</CardTitle>
                         <CardDescription className="line-clamp-2">
                           {tree.description || "No description"}
                         </CardDescription>
                       </div>
-                      {tree.aiGenerated && (
-                        <Badge variant="secondary" className="ml-2 shrink-0">
-                          AI
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {tree.aiGenerated && (
+                          <Badge variant="secondary">AI</Badge>
+                        )}
+                        {tree.isTemplate && tree.isPublic && (
+                          <Badge variant="outline">Template</Badge>
+                        )}
+                        <ShareTemplateButton
+                          treeId={tree.id}
+                          treeName={tree.name}
+                          isTemplate={tree.isTemplate}
+                          isPublic={tree.isPublic}
+                        />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">

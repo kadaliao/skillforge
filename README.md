@@ -6,7 +6,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 19:45
+> **Last Updated:** 2025-10-08 15:30
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -27,8 +27,8 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
    - Gamification data (XP, levels, streaks)
 
 3. **UI Components**
-   - shadcn/ui integration (10+ components)
-   - Components: Button, Card, Input, Badge, Progress, Avatar, Dialog, Dropdown, Tabs
+   - shadcn/ui integration (15+ components)
+   - Components: Button, Card, Input, Badge, Progress, Avatar, Dialog, Dropdown, Tabs, AlertDialog
    - Toast notifications (Sonner)
    - Dark/light theme support (next-themes)
    - Responsive design
@@ -75,8 +75,12 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
    - Auto-redirect to tree visualization after generation
 
 3. **API Endpoints**
-   - `/api/skill-tree/[id]` - Fetch skill tree with all skills and prerequisites
+   - `/api/skill-tree/[id]` - Fetch/delete skill tree with all skills and prerequisites
+   - `/api/skill-tree/[id]/share` - Toggle template sharing (public/private)
+   - `/api/skill-tree/[id]/clone` - Clone template with custom naming
+   - `/api/templates` - Fetch public template library
    - `/tree/[id]` - Server-rendered skill tree visualization page
+   - `/templates` - Public template gallery page
    - `/api/ai/generate-tasks` - Generate AI tasks for skills without tasks
 
 4. **Streaming Progress Display**
@@ -256,14 +260,26 @@ npm run lint                  # Run ESLint
    - Progress by skill tree with completion rates
    - Navigation: "View Analytics" button in dashboard header
 
-## 📋 Roadmap
-
-### Phase 6 - Polish & Deploy (IN PROGRESS)
+### Phase 6 - Polish & UI Improvements (✅ COMPLETED)
 
 - [x] **UI/UX Overhaul** - Replaced complex React Flow with simple card layout
 - [x] **Hierarchical Skill Tree** - Level-based grouping with prerequisite arrows
 - [x] **Consistent Layout** - Unified spacing and responsive design across all pages
 - [x] **Improved Navigation** - Cleaner header, optimized buttons, mobile-friendly
+
+### Phase 7 - Template Sharing & Management (✅ COMPLETED)
+
+- [x] **Public Template Library** - Browse community-shared skill trees at `/templates`
+- [x] **Template Sharing** - Share your skill trees as public templates
+- [x] **Template Cloning** - Clone templates with custom naming
+- [x] **Skill Tree Deletion** - Delete your own skill trees with confirmation
+- [x] **Data Isolation** - Cloned trees are fully independent (unshare/delete doesn't affect clones)
+- [x] **Navigation Integration** - Templates link accessible to all users
+
+## 📋 Roadmap
+
+### Phase 8 - Advanced Features (NEXT)
+
 - [ ] Framer Motion animations
   - Level up effects
   - Skill unlock animations
