@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-08 15:30
+**Last Updated:** 2025-10-08 18:50
 
 ## Current Status
 
@@ -86,6 +86,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **TypeScript Build**: All compilation errors resolved for production build
 
 **Recent Changes** (this session):
+- **Dark/Light Theme Toggle** (Phase 1 enhancement):
+  - Added `ThemeProvider` component wrapping next-themes library (`components/theme-provider.tsx`)
+  - Created `ThemeToggle` button with Sun/Moon icons in header (`components/theme-toggle.tsx`)
+  - Integrated theme provider in root layout with system theme detection
+  - Fixed landing page hard-coded colors (bg-white → bg-card, bg-*-50 → bg-*-500/10)
+  - Added dark mode variants to all accent colors (dark:text-*-400)
+  - Theme persists across sessions via localStorage
+  - Files: `app/layout.tsx:5-6,30,34-52`, `app/page.tsx:27,49-69,79,85-96,109-117`, `components/theme-provider.tsx`, `components/theme-toggle.tsx`
+
+**Previous Session Changes**:
 - **Achievement System Enhancements** (Phase 8):
   - Created `scripts/backfill-achievements.ts` for retroactive achievement detection based on historical user data
   - Integrated achievement detection into bulk task completion (`/api/tasks/bulk-complete`)
@@ -96,7 +106,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Resolved session.user undefined errors in DELETE routes
   - Updated auth checks to handle nullable session.user safely
 
-**Previous Session Changes**:
+**Earlier Session Changes**:
 - **Vercel + Neon Deployment Setup** (Phase 8):
   - Added Vercel deployment configuration (`vercel.json`) with build commands and region settings
   - Updated `package.json` with `postinstall` and `vercel-build` scripts for automated Prisma client generation and migrations
@@ -107,7 +117,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Removed Turbopack from production build (kept for dev) for better Vercel compatibility
   - Files: `vercel.json`, `package.json`, `DEPLOYMENT.md`, `.env.production.example`, `deploy.sh`, `.gitignore`
 
-**Earlier Session Changes**:
+**Historical Session Changes**:
 - **ShareTemplateButton Integration Fix** (Phase 7 enhancement):
   - Fixed missing share template functionality in dashboard skill tree cards
   - Updated `SkillTreeCard` component to integrate `ShareTemplateButton` dropdown menu
@@ -323,6 +333,8 @@ components/
 ├── task-create-dialog.tsx                  # Task creation modal with form validation
 ├── clone-template-dialog.tsx               # Template cloning with custom naming
 ├── share-template-button.tsx               # Dropdown menu for share/unshare/delete actions
+├── theme-provider.tsx                      # Theme provider wrapper for next-themes
+├── theme-toggle.tsx                        # Dark/light mode toggle button
 └── user-nav.tsx                            # User navigation with stats display and dropdown
 
 lib/

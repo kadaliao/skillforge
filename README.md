@@ -6,13 +6,12 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-08 15:30
+> **Last Updated:** 2025-10-08 18:50
 
 ### 🆕 Recent Updates
+- **Dark/Light Theme Toggle** - Fully responsive theme switcher in header, system theme detection, persists across sessions
 - **Production Ready** - All 8 development phases completed, fully deployed to Vercel with Neon PostgreSQL
 - **Achievement System Enhanced** - Retroactive achievement detection with backfill script for historical data
-- **Bulk Operations Improved** - Achievement detection integrated into bulk task completion
-- **Build Optimized** - Edge Function size limits resolved, all TypeScript errors fixed for production
 - **Template System** - Share skill trees as public templates, clone and customize community templates
 - **Personalized AI Generation** - Optional context fields for background, existing skills, and learning preferences
 - **AI-Generated Task Checklists** - Context-aware completion checkboxes reduce manual typing
@@ -39,7 +38,8 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
    - shadcn/ui integration (15+ components)
    - Components: Button, Card, Input, Badge, Progress, Avatar, Dialog, Dropdown, Tabs, AlertDialog
    - Toast notifications (Sonner)
-   - Dark/light theme support (next-themes)
+   - **Dark/light theme toggle** with system detection (next-themes) - Sun/Moon icon in header
+   - Theme persists across sessions via localStorage
    - Responsive design
 
 4. **AI Integration**
