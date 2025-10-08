@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-07 19:45
+**Last Updated:** 2025-10-08 12:20
 
 ## Current Status
 
@@ -63,26 +63,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **Skill Tree Redesign**: Level-based grouping with clear prerequisite arrows (↑ badges)
 - ✅ **Consistent Layout**: Unified spacing (py-6 px-4) and responsive design across all pages
 - ✅ **Improved Navigation**: Cleaner header (h-14), optimized button sizes, mobile-friendly layouts
+- ✅ **Personalized AI Generation**: Multi-dimensional context input (background, existing skills, learning preferences)
 - ⏳ **Animations**: Smooth transitions and micro-interactions (pending)
 - ⏳ **Mobile Optimization**: Touch-friendly controls and gestures (pending)
 - ⏳ **Deployment**: Production build and hosting setup (pending)
 
 **Recent Changes** (this session):
-- **Skill Tree Visualization Overhaul**: Replaced React Flow canvas with `SkillTreeSimple` component using traditional HTML/CSS
-  - Hierarchical level-based layout with clear visual grouping
-  - Prerequisites shown as clickable ↑ badges for easy navigation
-  - Removed unnecessary complexity (zoom, pan, drag) for better UX
-  - Fixed dagre auto-layout issues by removing hardcoded grid positions
-- **Global Layout Improvements**:
-  - Unified all pages with `container mx-auto py-6 px-4` pattern
-  - Reduced header height (h-16 → h-14) and font sizes for better density
-  - Made all pages responsive (mobile-first approach)
-  - Fixed duplicate logo issue on landing page
-- **Component Optimizations**:
-  - Skill cards: Smaller padding (p-4 → p-3), compact fonts, better information hierarchy
-  - Achievement cards: Tighter spacing, smaller badges (text-[10px]), improved status indicators
-  - Dashboard: Smaller buttons (size="sm"), responsive stats layout
-  - Analytics: Added descriptive subtitles, responsive headers
+- **Personalized AI Generation** (NEW):
+  - Added collapsible "告诉我们更多" section with 3 optional natural language text fields
+  - Background input: User's professional/educational background
+  - Existing skills input: Skills already mastered (free-form text)
+  - Learning preferences: Goals, resource preferences, constraints
+  - Enhanced AI prompt with multi-dimensional context fusion
+  - Smart personalization: Skip redundant content, match resources to learning style, adjust difficulty based on experience
+  - New UI components: Alert, Collapsible (shadcn/ui)
+  - Updated type definitions in `lib/ai.ts` and API schema validation
+- **Previous Session Changes**:
+  - Skill Tree Visualization: Replaced React Flow with hierarchical card layout
+  - Global layout unification (py-6 px-4 pattern)
+  - Component size optimizations across all pages
 
 ## Project Overview
 
@@ -133,10 +132,11 @@ npm run lint                  # Run ESLint
 All AI features use OpenAI SDK with **Zod schema validation** via `/lib/ai.ts`:
 
 1. **Skill Tree Generation** (`/api/ai/generate-tree-stream` - streaming, `/api/ai/generate-tree` - legacy)
-   - Input: User goal, skill level, weekly hours, preferences
+   - Input: User goal, skill level, weekly hours + optional personalization (background, existing skills, learning preferences)
    - Output: 15-25 skills with dependencies, difficulty ratings (1-10), XP rewards, learning resources
    - Streaming mode: Real-time progress updates via Server-Sent Events (SSE)
    - Validates response with `SkillTreeResponseSchema` (Zod)
+   - Personalization: AI adapts starting point, skips known skills, matches resources to learning style
    - Saves generated trees to database with prerequisite relationships
 
 2. **Task Evaluation** (`/api/ai/evaluate-task`)
@@ -214,8 +214,8 @@ app/
 └── page.tsx                                # Landing page with SkillTreeGenerator
 
 components/
-├── ui/                                     # shadcn/ui components (button, card, input, badge, select, etc.)
-├── skill-tree-generator.tsx                # Main form with streaming progress display
+├── ui/                                     # shadcn/ui components (button, card, input, badge, select, alert, collapsible, etc.)
+├── skill-tree-generator.tsx                # Main form with streaming progress + personalization inputs
 ├── skill-tree-canvas.tsx                   # Legacy React Flow visualization (deprecated)
 ├── skill-tree-simple.tsx                   # Current: Simple hierarchical card-based skill tree layout
 ├── task-completion-dialog.tsx              # Task completion modal with AI evaluation

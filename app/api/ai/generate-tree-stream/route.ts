@@ -11,7 +11,12 @@ const generateTreeSchema = z.object({
   goal: z.string().min(5, 'Goal must be at least 5 characters'),
   currentLevel: z.enum(['beginner', 'intermediate', 'advanced']),
   weeklyHours: z.number().min(1).max(168),
-  preferences: z.array(z.string()).optional(),
+  preferences: z.array(z.string()).optional(), // Legacy field
+
+  // Personalization fields (optional, natural language)
+  userBackground: z.string().optional(),
+  existingSkills: z.string().optional(),
+  learningPreferences: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {

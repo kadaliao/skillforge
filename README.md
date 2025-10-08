@@ -6,7 +6,12 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 19:45
+> **Last Updated:** 2025-10-08 12:20
+
+### 🆕 Recent Updates
+- **Personalized AI Generation** - Added optional context fields for background, existing skills, and learning preferences (natural language input)
+- **Smart Skill Tree Adaptation** - AI now skips redundant content, adjusts difficulty based on experience, and matches resources to learning style
+- **UI Enhancements** - Collapsible personalization section with helpful prompts and examples
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -44,11 +49,13 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
      - `/api/ai/generate-tree-stream` (streaming with real-time progress)
      - `/api/ai/generate-tree` (legacy, non-streaming)
      - `/api/ai/evaluate-task` (task quality evaluation with submission analysis)
-   - Intelligent learning path creation based on:
+   - **Personalized learning paths** based on:
      - User's goal
      - Current skill level
      - Weekly time availability
-     - Learning preferences
+     - Optional: Professional/educational background
+     - Optional: Existing skills (natural language input)
+     - Optional: Learning preferences and constraints
    - **Auto-generates tasks**: Each skill includes 3 progressive tasks (STUDY → PRACTICE → PROJECT)
 
 5. **Landing Page**
@@ -264,6 +271,10 @@ npm run lint                  # Run ESLint
 - [x] **Hierarchical Skill Tree** - Level-based grouping with prerequisite arrows
 - [x] **Consistent Layout** - Unified spacing and responsive design across all pages
 - [x] **Improved Navigation** - Cleaner header, optimized buttons, mobile-friendly
+- [x] **Personalized AI Generation** - Multi-dimensional context input
+  - Collapsible optional section with 3 natural language text fields
+  - Background, existing skills, and learning preferences
+  - AI adapts starting point, skips known content, matches resources to learning style
 - [ ] Framer Motion animations
   - Level up effects
   - Skill unlock animations
@@ -325,9 +336,13 @@ Key models:
 ## 🎯 Core AI Features
 
 ### Skill Tree Generation (`/api/ai/generate-tree-stream`)
-- **Input**: User goal, skill level, weekly hours, preferences
+- **Input**: User goal, skill level, weekly hours + optional personalization
+  - Optional: Professional/educational background (natural language)
+  - Optional: Existing skills (free-form text)
+  - Optional: Learning preferences and constraints (natural language)
 - **Output**: 12-15 skills with dependencies, difficulty ratings (1-10), XP rewards, learning resources
 - **Each skill includes 3 auto-generated tasks**: Progressive difficulty (STUDY → PRACTICE → PROJECT)
+- **Personalization**: AI adapts starting point, skips known skills, matches resources to learning style
 - **Streaming Mode**: Real-time progress updates via Server-Sent Events (SSE)
   - Shows token generation progress
   - Reports parsing and validation steps
@@ -335,6 +350,7 @@ Key models:
   - Intelligent JSON repair for truncated responses
 - **Architecture**:
   - OpenAI streaming API with `stream: true` and configurable `max_tokens` (default 16384)
+  - Multi-dimensional context fusion in AI prompt
   - Validates response with `SkillTreeResponseSchema` (Zod)
   - Saves generated trees to PostgreSQL with prerequisite relationships and tasks
   - Type-safe TypeScript output inferred from schema
