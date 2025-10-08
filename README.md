@@ -6,7 +6,7 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-07 19:45
+> **Last Updated:** 2025-10-08 14:30
 
 ### Phase 1 - Core Foundation (✅ COMPLETED)
 
@@ -204,7 +204,7 @@ npm run lint                  # Run ESLint
      - EPIC: Month Master (30-day streak), Knowledge Seeker (50 skills), Tree Master
      - LEGENDARY: Unstoppable (100-day streak), Grandmaster (Level 50), Polymath (100 skills)
    - Auto-detection and awarding on task completion
-   - Achievement showcase page at `/achievements`
+   - Achievement showcase page at `/achievements` (sorted easiest-to-unlock first)
 
 4. **Streak Tracking**
    - Daily activity tracking with 48-hour grace period

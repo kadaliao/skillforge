@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { TaskCompletionDialog } from '@/components/task-completion-dialog';
 import { TaskCreateDialog } from '@/components/task-create-dialog';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 type SkillStatus = 'LOCKED' | 'AVAILABLE' | 'IN_PROGRESS' | 'COMPLETED' | 'MASTERED';
 
@@ -92,6 +93,21 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
   const [skillsData, setSkillsData] = useState(skillTree.skills);
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
+  // Refetch skill tree data without page reload
+  const refreshSkillTree = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/skill-tree/${skillTree.id}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('Failed to refresh data');
+      const data = await response.json();
+      setSkillsData(data.data.skills);
+    } catch (error) {
+      console.error('Failed to refresh skill tree:', error);
+      toast.error('Failed to refresh data');
+    }
+  }, [skillTree.id]);
+
   const selectedSkill = useMemo(
     () => skillsData.find((s) => s.id === selectedSkillId) || null,
     [skillsData, selectedSkillId]
@@ -140,9 +156,10 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
     [selectedTaskId]
   );
 
-  const handleTaskCreated = useCallback(() => {
-    window.location.reload();
-  }, []);
+  const handleTaskCreated = useCallback(async () => {
+    await refreshSkillTree();
+    toast.success('Task created');
+  }, [refreshSkillTree]);
 
   const handleTaskDelete = useCallback(async (taskId: string) => {
     if (!confirm('Delete this task? This cannot be undone.')) return;
@@ -155,12 +172,35 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
       if (!response.ok) throw new Error('Failed to delete task');
 
       toast.success('Task deleted');
-      window.location.reload();
+      await refreshSkillTree();
     } catch (error) {
       toast.error('Failed to delete task');
       console.error(error);
     }
-  }, []);
+  }, [refreshSkillTree]);
+
+  const handleSkillDelete = useCallback(async (skillId: string, skillName: string) => {
+    if (!confirm(`Delete skill "${skillName}"?\n\nThis will:\n- Delete all tasks in this skill\n- Unlink dependencies from other skills\n- Keep activity history (set to null)\n\nThis cannot be undone.`)) return;
+
+    try {
+      const response = await fetch(`/api/skills/${skillId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete skill');
+      }
+
+      const result = await response.json();
+      toast.success(`Skill deleted. ${result.tasksDeleted} task(s) removed, ${result.dependentsUnlinked} dependent(s) unlinked.`);
+      setSelectedSkillId(null); // Close panel since skill is deleted
+      await refreshSkillTree();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete skill');
+      console.error(error);
+    }
+  }, [refreshSkillTree]);
 
   const handleBulkComplete = useCallback(async () => {
     const taskIds = Array.from(selectedTasks);
@@ -178,12 +218,12 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
       const result = await response.json();
       toast.success(`Completed ${result.tasksCompleted} tasks! +${result.totalXP} XP`);
       setSelectedTasks(new Set());
-      window.location.reload();
+      await refreshSkillTree();
     } catch (error) {
       toast.error('Failed to complete tasks');
       console.error(error);
     }
-  }, [selectedTasks]);
+  }, [selectedTasks, refreshSkillTree]);
 
   const handleBulkDelete = useCallback(async () => {
     const taskIds = Array.from(selectedTasks);
@@ -203,12 +243,12 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
       const result = await response.json();
       toast.success(`Deleted ${result.deletedCount} tasks`);
       setSelectedTasks(new Set());
-      window.location.reload();
+      await refreshSkillTree();
     } catch (error) {
       toast.error('Failed to delete tasks');
       console.error(error);
     }
-  }, [selectedTasks]);
+  }, [selectedTasks, refreshSkillTree]);
 
   const toggleTaskSelection = useCallback((taskId: string) => {
     setSelectedTasks((prev) => {
@@ -239,9 +279,17 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
   };
 
   return (
-    <div className="flex gap-6">
+    <>
+      {/* Background overlay when task panel is open */}
+      {selectedSkill && (
+        <div
+          className="fixed inset-0 bg-black/20 z-40 transition-opacity"
+          onClick={() => setSelectedSkillId(null)}
+        />
+      )}
+
       {/* Skill Tree - Level-based layout */}
-      <div className="flex-1 space-y-6">
+      <div className="space-y-6">
         {skillLevels.map((levelSkills, levelIndex) => (
           <div key={levelIndex} className="space-y-3">
             <div className="flex items-center gap-3">
@@ -263,8 +311,8 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                 return (
                   <Card
                     key={skill.id}
-                    className={`p-3 border-2 transition-all cursor-pointer hover:shadow-md ${
-                      selectedSkillId === skill.id ? 'ring-2 ring-primary' : ''
+                    className={`p-3 border-2 transition-smooth cursor-pointer hover-lift ${
+                      selectedSkillId === skill.id ? 'ring-2 ring-primary animate-pulse-ring' : ''
                     } ${statusColors[skill.status]}`}
                     onClick={() => setSelectedSkillId(skill.id)}
                   >
@@ -310,7 +358,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                           </div>
                           <div className="h-1 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-600 transition-all"
+                              className="h-full bg-blue-600 transition-progress"
                               style={{ width: `${(skill.currentXP / skill.xpToNextLevel) * 100}%` }}
                             />
                           </div>
@@ -324,7 +372,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                             </div>
                             <div className="h-1 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-green-600 transition-all"
+                                className="h-full bg-green-600 transition-progress"
                                 style={{ width: `${progressPercent}%` }}
                               />
                             </div>
@@ -340,12 +388,23 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
         ))}
       </div>
 
-      {/* Task Panel */}
+      {/* Task Panel - Fixed positioning */}
       {selectedSkill && (
-        <Card className="w-96 p-4 overflow-y-auto flex flex-col max-h-screen sticky top-4">
+        <Card className="fixed right-4 top-20 bottom-4 w-96 p-4 overflow-y-auto flex flex-col z-50 shadow-2xl">
           <div className="space-y-4 flex-1">
             <div>
-              <h3 className="font-semibold text-lg">{selectedSkill.name}</h3>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="font-semibold text-lg flex-1">{selectedSkill.name}</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleSkillDelete(selectedSkill.id, selectedSkill.name)}
+                  title="Delete skill"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
               {selectedSkill.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {selectedSkill.description}
@@ -388,7 +447,8 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                           if (!response.ok) throw new Error('Failed to generate tasks');
 
                           toast.success('Tasks generated successfully!');
-                          window.location.reload();
+                          await refreshSkillTree();
+                          setGeneratingTasks(false);
                         } catch (error) {
                           toast.error('Failed to generate tasks');
                           console.error(error);
@@ -414,6 +474,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => setCreateDialogOpen(true)}
+                    className="btn-press"
                   >
                     + Add Task
                   </Button>
@@ -425,10 +486,10 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                 <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
                   <span className="text-sm font-medium">{selectedTasks.size} selected</span>
                   <div className="flex gap-1 ml-auto">
-                    <Button size="sm" variant="secondary" onClick={handleBulkComplete}>
+                    <Button size="sm" onClick={handleBulkComplete} className="btn-press bg-primary text-primary-foreground hover:bg-primary/90">
                       Complete
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={handleBulkDelete}>
+                    <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="btn-press">
                       Delete
                     </Button>
                   </div>
@@ -439,7 +500,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                 {selectedSkill.tasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`p-2 border rounded-lg ${
+                    className={`p-2 border rounded-lg transition-smooth ${
                       task.completed
                         ? 'bg-green-50 dark:bg-green-950 border-green-500'
                         : 'hover:bg-muted'
@@ -479,7 +540,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 px-2 text-xs"
+                          className="h-6 px-2 text-xs btn-press"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleTaskDelete(task.id);
@@ -530,6 +591,6 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
           onTaskCreated={handleTaskCreated}
         />
       )}
-    </div>
+    </>
   );
 }

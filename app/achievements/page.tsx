@@ -37,12 +37,12 @@ export default async function AchievementsPage() {
     };
   });
 
-  // Group by rarity
+  // Group by rarity (from easiest to hardest)
   const achievementsByRarity = {
-    LEGENDARY: achievements.filter((a) => a.rarity === "LEGENDARY"),
-    EPIC: achievements.filter((a) => a.rarity === "EPIC"),
-    RARE: achievements.filter((a) => a.rarity === "RARE"),
     COMMON: achievements.filter((a) => a.rarity === "COMMON"),
+    RARE: achievements.filter((a) => a.rarity === "RARE"),
+    EPIC: achievements.filter((a) => a.rarity === "EPIC"),
+    LEGENDARY: achievements.filter((a) => a.rarity === "LEGENDARY"),
   };
 
   const totalAchievements = ACHIEVEMENT_DEFINITIONS.length;
@@ -123,9 +123,9 @@ export default async function AchievementsPage() {
                 {items.map((achievement) => (
                   <Card
                     key={achievement.id}
-                    className={`p-3 transition-all ${
+                    className={`p-3 transition-smooth ${
                       achievement.unlocked
-                        ? `border-2 ${rarityColors[rarity as keyof typeof rarityColors]}`
+                        ? `border-2 ${rarityColors[rarity as keyof typeof rarityColors]} hover-lift`
                         : "opacity-50 grayscale"
                     }`}
                   >

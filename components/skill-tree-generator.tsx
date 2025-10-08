@@ -207,7 +207,7 @@ export function SkillTreeGenerator({ onTreeGenerated }: SkillTreeGeneratorProps)
         <Button
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full"
+          className="w-full btn-press"
           size="lg"
         >
           {loading ? (

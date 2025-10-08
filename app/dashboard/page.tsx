@@ -2,9 +2,9 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { SkillTreeCard } from "@/components/skill-tree-card"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -53,10 +53,10 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground text-sm">Track your learning progress</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild size="sm">
+          <Button variant="outline" asChild size="sm" className="btn-press">
             <Link href="/analytics">Analytics</Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="btn-press">
             <Link href="/">+ New Tree</Link>
           </Button>
         </div>
@@ -105,60 +105,16 @@ export default async function DashboardPage() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground mb-4">No skill trees yet. Create your first one!</p>
-              <Button asChild>
+              <Button asChild className="btn-press">
                 <Link href="/">Generate Skill Tree</Link>
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {skillTrees.map((tree) => {
-              const completedCount = tree.skills.filter(
-                (s) => s.status === "COMPLETED" || s.status === "MASTERED"
-              ).length
-              const progressPercent = tree.skills.length > 0
-                ? Math.round((completedCount / tree.skills.length) * 100)
-                : 0
-
-              return (
-                <Card key={tree.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="line-clamp-1">{tree.name}</CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {tree.description || "No description"}
-                        </CardDescription>
-                      </div>
-                      {tree.aiGenerated && (
-                        <Badge variant="secondary" className="ml-2 shrink-0">
-                          AI
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{progressPercent}%</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{tree.skills.length} skills</span>
-                      <span>{completedCount} completed</span>
-                    </div>
-                    <Button asChild className="w-full" variant="outline">
-                      <Link href={`/tree/${tree.id}`}>View Tree</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
+            {skillTrees.map((tree) => (
+              <SkillTreeCard key={tree.id} tree={tree} />
+            ))}
           </div>
         )}
       </div>

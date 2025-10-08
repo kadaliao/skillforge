@@ -165,17 +165,17 @@ export function TaskCompletionDialog({
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 animate-slide-up">
             {/* Success Summary */}
             <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">XP Awarded</span>
-                <Badge variant="default" className="text-lg">
+                <Badge variant="default" className="text-lg animate-celebration">
                   +{result.xpAwarded} XP
                 </Badge>
               </div>
               {result.qualityScore && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
                   <span className="text-sm text-muted-foreground">Quality Score</span>
                   <Badge variant="outline">{result.qualityScore}/10</Badge>
                 </div>
@@ -184,7 +184,7 @@ export function TaskCompletionDialog({
 
             {/* AI Feedback */}
             {result.aiFeedback && (
-              <div className="space-y-2">
+              <div className="space-y-2 animate-scale-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
                 <Label>AI Feedback</Label>
                 <div className="rounded-lg border bg-muted/30 p-3 text-sm">
                   {result.aiFeedback}
@@ -193,7 +193,7 @@ export function TaskCompletionDialog({
             )}
 
             {/* User Progress */}
-            <div className="space-y-2">
+            <div className="space-y-2 animate-scale-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
               <Label>Your Progress</Label>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -213,13 +213,14 @@ export function TaskCompletionDialog({
 
             {/* New Achievements */}
             {result.newAchievements.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 animate-scale-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
                 <Label>🏆 New Achievements</Label>
                 <div className="space-y-2">
-                  {result.newAchievements.map((achievement) => (
+                  {result.newAchievements.map((achievement, index) => (
                     <div
                       key={achievement.id}
-                      className="flex items-center gap-3 rounded-lg border p-3"
+                      className="flex items-center gap-3 rounded-lg border p-3 animate-celebration"
+                      style={{ animationDelay: `${0.5 + index * 0.1}s`, animationFillMode: 'both' }}
                     >
                       <span className="text-2xl">{achievement.iconName}</span>
                       <div className="flex-1">
@@ -249,8 +250,16 @@ export function TaskCompletionDialog({
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Cancel
               </Button>
-              <Button onClick={handleComplete} disabled={loading}>
-                {loading ? "Completing..." : "Complete Task"}
+              <Button onClick={handleComplete} disabled={loading} className="btn-press">
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Completing...
+                  </span>
+                ) : "Complete Task"}
               </Button>
             </>
           ) : (

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-07 19:45
+**Last Updated:** 2025-10-08 14:30
 
 ## Current Status
 
@@ -68,6 +68,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ⏳ **Deployment**: Production build and hosting setup (pending)
 
 **Recent Changes** (this session):
+- **Achievement Sorting**: Reordered achievements page to show easiest-to-unlock first (COMMON → RARE → EPIC → LEGENDARY)
 - **Skill Tree Visualization Overhaul**: Replaced React Flow canvas with `SkillTreeSimple` component using traditional HTML/CSS
   - Hierarchical level-based layout with clear visual grouping
   - Prerequisites shown as clickable ↑ badges for easy navigation
@@ -83,6 +84,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Achievement cards: Tighter spacing, smaller badges (text-[10px]), improved status indicators
   - Dashboard: Smaller buttons (size="sm"), responsive stats layout
   - Analytics: Added descriptive subtitles, responsive headers
+- **New Files**:
+  - `components/skill-tree-card.tsx`: Card-based skill display component
+  - `app/api/skills/[skillId]/route.ts`: Individual skill API endpoint
 
 ## Project Overview
 
