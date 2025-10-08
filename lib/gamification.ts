@@ -4,7 +4,7 @@
  * Core formulas and logic for SkillForge progression system.
  */
 
-import { AchievementRarity, ActivityType } from "@prisma/client";
+import { Rarity, ActivityType } from "@prisma/client";
 
 // ============================================================================
 // XP & LEVELING FORMULAS
@@ -167,7 +167,7 @@ export interface AchievementDefinition {
   id: string;
   name: string;
   description: string;
-  rarity: AchievementRarity;
+  rarity: Rarity;
   iconName: string;
   checkCondition: (data: AchievementCheckData) => boolean;
 }
@@ -179,8 +179,8 @@ export interface AchievementCheckData {
     currentStreak: number;
     longestStreak: number;
   };
-  skillTrees: { id: string; completedAt: Date | null }[];
-  skills: { id: string; status: string; completedAt: Date | null }[];
+  skillTrees: { id: string }[];
+  skills: { id: string; status: string; completedAt: Date | null; treeId: string }[];
   tasks: { id: string; completedAt: Date | null }[];
   activities: { type: ActivityType; createdAt: Date }[];
 }
@@ -265,7 +265,14 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     description: "Complete an entire skill tree",
     rarity: "EPIC",
     iconName: "🏆",
-    checkCondition: (data) => data.skillTrees.filter(t => t.completedAt).length >= 1
+    checkCondition: (data) => {
+      // A tree is complete if all its skills are completed
+      const completedTrees = data.skillTrees.filter(tree => {
+        const treeSkills = data.skills.filter(s => s.treeId === tree.id);
+        return treeSkills.length > 0 && treeSkills.every(s => s.status === 'COMPLETED' || s.status === 'MASTERED');
+      });
+      return completedTrees.length >= 1;
+    }
   },
 
   // LEGENDARY - Mastery

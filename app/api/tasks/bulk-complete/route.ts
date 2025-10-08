@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = session.user.id;
     const body = await req.json();
     const { taskIds } = bulkCompleteSchema.parse(body);
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
           id: { in: taskIds },
           skill: {
             tree: {
-              userId: session.user.id,
+              userId,
             },
           },
         },
@@ -154,7 +155,7 @@ export async function POST(req: NextRequest) {
 
       // 5. Update user stats
       const user = await tx.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
       });
 
       if (!user) throw new Error("User not found");
@@ -168,7 +169,7 @@ export async function POST(req: NextRequest) {
       );
 
       await tx.user.update({
-        where: { id: session.user.id },
+        where: { id: userId },
         data: {
           totalXP: newTotalXP,
           level: newLevel,
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
       await tx.activity.create({
         data: {
           type: "TASK_COMPLETE",
-          userId: session.user.id,
+          userId,
           xpGained: totalXP,
           description: `Completed ${incompleteTasks.length} tasks in bulk`,
           metadata: {
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: error.issues },
         { status: 400 }
       );
     }

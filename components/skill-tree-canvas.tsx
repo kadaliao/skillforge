@@ -55,7 +55,8 @@ type SkillTreeData = {
 };
 
 // Custom node component
-function SkillNode({ data }: NodeProps<SkillData & { label: string; onNodeClick?: (skillId: string) => void }>) {
+type SkillNodeData = SkillData & { label: string; onNodeClick?: (skillId: string) => void };
+function SkillNode({ data }: { data: SkillNodeData }) {
   const statusColors = {
     LOCKED: 'bg-gray-200 dark:bg-gray-800 border-gray-400',
     AVAILABLE: 'bg-blue-50 dark:bg-blue-950 border-blue-500',

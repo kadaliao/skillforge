@@ -84,16 +84,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (submission && submission.trim().length > 0) {
       try {
-        const evaluation = await evaluateTaskCompletion({
-          taskTitle: task.title,
-          taskDescription: task.description || "",
-          userSubmission: submission,
-          baseXP: task.xpReward,
-        });
+        const evaluation = await evaluateTaskCompletion(
+          task.title,
+          task.description || "",
+          submission,
+          task.xpReward
+        );
 
         qualityScore = evaluation.qualityScore;
         aiFeedback = evaluation.feedback;
-        xpAwarded = evaluation.adjustedXP;
+        xpAwarded = evaluation.suggestedXP;
       } catch (error) {
         console.error("AI evaluation failed:", error);
         // Fallback to base XP if AI fails
@@ -282,14 +282,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // ========================================================================
 
     const [skillTrees, skills, tasks, activities, earnedAchievements] = await Promise.all([
-      prisma.skillTree.findMany({ where: { userId: session.user.id } }),
+      prisma.skillTree.findMany({
+        where: { userId: session.user.id },
+        select: { id: true },
+      }),
       prisma.skill.findMany({
         where: { tree: { userId: session.user.id } },
+        select: { id: true, status: true, completedAt: true, treeId: true },
       }),
       prisma.task.findMany({
         where: { skill: { tree: { userId: session.user.id } } },
+        select: { id: true, completedAt: true },
       }),
-      prisma.activity.findMany({ where: { userId: session.user.id } }),
+      prisma.activity.findMany({
+        where: { userId: session.user.id },
+        select: { type: true, createdAt: true },
+      }),
       prisma.userAchievement.findMany({
         where: { userId: session.user.id },
         include: { achievement: true },
