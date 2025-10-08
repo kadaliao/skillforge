@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SkillData {
   name: string;
@@ -38,6 +42,12 @@ export function SkillTreeGenerator({ onTreeGenerated }: SkillTreeGeneratorProps)
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<string[]>([]);
 
+  // Personalization fields
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [userBackground, setUserBackground] = useState('');
+  const [existingSkills, setExistingSkills] = useState('');
+  const [learningPreferences, setLearningPreferences] = useState('');
+
   const handleGenerate = async () => {
     if (!goal.trim()) {
       setError('Please enter your learning goal');
@@ -58,6 +68,10 @@ export function SkillTreeGenerator({ onTreeGenerated }: SkillTreeGeneratorProps)
           goal,
           currentLevel,
           weeklyHours,
+          // Personalization fields (optional)
+          userBackground: userBackground.trim() || undefined,
+          existingSkills: existingSkills.trim() || undefined,
+          learningPreferences: learningPreferences.trim() || undefined,
         }),
       });
 
@@ -185,6 +199,96 @@ export function SkillTreeGenerator({ onTreeGenerated }: SkillTreeGeneratorProps)
             <span>40h/week</span>
           </div>
         </div>
+
+        {/* Personalization Section */}
+        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-between hover:bg-muted/50"
+              disabled={loading}
+            >
+              <span className="flex items-center gap-2">
+                💬 告诉我们更多
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  可选，但推荐
+                </Badge>
+              </span>
+              {showAdvanced ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="space-y-4 pt-4">
+            {/* Background */}
+            <div className="space-y-2">
+              <Label htmlFor="background">
+                💼 你的背景
+                <span className="text-xs text-muted-foreground ml-2 font-normal">
+                  职业、教育、工作年限等
+                </span>
+              </Label>
+              <Textarea
+                id="background"
+                placeholder="例如：前端工程师 3年 / 计算机专业学生 / 转行学编程"
+                rows={2}
+                value={userBackground}
+                onChange={(e) => setUserBackground(e.target.value)}
+                disabled={loading}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Existing Skills */}
+            <div className="space-y-2">
+              <Label htmlFor="skills">
+                ✨ 已掌握的技能
+                <span className="text-xs text-muted-foreground ml-2 font-normal">
+                  相关技术、工具、语言等
+                </span>
+              </Label>
+              <Textarea
+                id="skills"
+                placeholder="例如：React, TypeScript, Git, 会用 Figma 设计原型"
+                rows={2}
+                value={existingSkills}
+                onChange={(e) => setExistingSkills(e.target.value)}
+                disabled={loading}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Learning Preferences */}
+            <div className="space-y-2">
+              <Label htmlFor="preferences">
+                🎯 学习目的和偏好
+                <span className="text-xs text-muted-foreground ml-2 font-normal">
+                  目的、资源偏好、限制等
+                </span>
+              </Label>
+              <Textarea
+                id="preferences"
+                placeholder="例如：转行做全栈，喜欢视频教程，预算有限希望免费资源，晚上学习为主"
+                rows={3}
+                value={learningPreferences}
+                onChange={(e) => setLearningPreferences(e.target.value)}
+                disabled={loading}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Info Alert */}
+            <Alert className="bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
+              <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-xs text-blue-900 dark:text-blue-100">
+                💡 这些信息会帮助 AI 生成更符合你需求的学习路径。你可以用自然语言描述，AI 会智能理解。
+              </AlertDescription>
+            </Alert>
+          </CollapsibleContent>
+        </Collapsible>
 
         {progress.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3 max-h-48 overflow-y-auto">

@@ -44,67 +44,132 @@ export interface SkillTreeGenerationInput {
   goal: string;
   currentLevel: 'beginner' | 'intermediate' | 'advanced';
   weeklyHours: number;
-  preferences?: string[];
+  preferences?: string[]; // Legacy field, kept for backward compatibility
+
+  // Personalization fields (natural language input)
+  userBackground?: string;      // User's professional/educational background
+  existingSkills?: string;      // Skills already mastered (free-form text)
+  learningPreferences?: string; // Learning goals, style preferences, constraints
 }
 
 export async function generateSkillTreeStream(
   input: SkillTreeGenerationInput,
   onProgress: (chunk: string) => void
 ): Promise<SkillTreeResponse> {
-  const prompt = `You are an expert learning path designer. Generate a skill tree SKELETON (structure only, no tasks yet).
+  // Build personalized context sections
+  const backgroundSection = input.userBackground
+    ? `
+【用户背景】
+${input.userBackground}
 
-User Goal: ${input.goal}
-Current Level: ${input.currentLevel}
-Weekly Time Available: ${input.weeklyHours} hours
-Preferences: ${input.preferences?.join(', ') || 'None specified'}
+📊 分析要点：
+- 识别已有知识储备（如：计算机专业 → 有编程基础）
+- 识别职业方向（如：前端工程师 → 熟悉 Web 技术栈）
+- 识别经验水平（如：3年经验 → 可跳过入门内容）
+`
+    : '';
 
-Create a skill tree skeleton with the following requirements:
+  const skillsSection = input.existingSkills
+    ? `
+【已掌握技能】
+${input.existingSkills}
 
-1. Break down the main goal into 12-15 individual skills
-2. Each skill should be achievable in 1-3 weeks
-3. Define clear prerequisite relationships between skills (this is CRITICAL)
-4. Assign difficulty ratings (1-10) and estimated hours
-5. Calculate XP rewards based on difficulty and time investment (difficulty * estimatedHours * 10)
-6. Categorize skills into logical groups (e.g., Frontend, Backend, DevOps)
-7. Provide 2-3 learning resource recommendations per skill
+✨ 处理要求：
+- 从技能列表中识别相关技术（如："会 React" → 跳过 React 基础）
+- 识别技能水平（如："精通 JS" vs "了解 JS"）
+- 基于已有技能调整起点难度
+`
+    : '';
 
-Important:
-- Skills should progress from easier to harder
-- Prerequisite skills must come before dependent skills in the array
-- First 2-3 skills should have no prerequisites (entry points)
-- Difficulty should gradually increase (start at 1-3, end at 7-10)
-- DO NOT generate tasks - tasks will be generated later when user clicks on a skill
+  const preferencesSection = input.learningPreferences
+    ? `
+【学习偏好与约束】
+${input.learningPreferences}
 
-CRITICAL: Return ONLY valid JSON matching this EXACT structure (no markdown, no extra text):
+🎯 个性化要点：
+- 学习风格（如："喜欢视频" → 推荐 YouTube/Udemy 资源）
+- 预算限制（如："免费资源" → 避免推荐付费课程）
+- 时间约束（如："晚上学习" → 推荐短视频而非长课程）
+- 学习目的（如："转行" → 强调项目经验和作品集）
+`
+    : '';
+
+  const prompt = `你是专业学习路径设计师。请基于以下**多维度信息**生成个性化学习路径。
+
+═══════════════════════════════════════════
+【核心目标】
+${input.goal}
+
+【基础信息】
+- 当前水平: ${input.currentLevel}
+- 每周时间: ${input.weeklyHours}小时
+${backgroundSection}${skillsSection}${preferencesSection}
+═══════════════════════════════════════════
+
+【生成要求】
+
+🎯 **个性化策略**：
+1. **智能起点**：根据背景和已有技能，设置合适的起始难度
+   - 如果用户已掌握相关技能，直接从进阶内容开始
+   - 如果是转行新手，从基础概念讲起
+2. **跳过冗余**：用户明确表示已掌握的技能不要重复教
+3. **资源匹配**：根据偏好推荐对应类型的学习资源
+   - 喜欢视频 → YouTube, Udemy, 中国大学MOOC
+   - 喜欢文档 → 官方文档, MDN, 技术博客
+   - 喜欢项目 → GitHub 项目, 实战教程
+4. **目标导向**：根据学习目的优化路径
+   - 转行 → 强调项目作品集
+   - 晋升 → 强调深度和系统性
+   - 兴趣 → 强调趣味性和成就感
+
+📋 **技术要求**：
+1. 将目标分解为 12-15 个技能节点
+2. 每个技能 1-3 周可完成
+3. 定义清晰的前置依赖关系（这是关键！）
+4. 分配难度评级 (1-10) 和预估学时
+5. 计算 XP 奖励: difficulty × estimatedHours × 10
+6. 分类技能（如：前端、后端、工具链）
+7. 每个技能推荐 2-3 个学习资源
+
+⚠️ **约束条件**：
+- 技能难度渐进（1-3 起步，7-10 收尾）
+- 前置技能必须在依赖技能之前
+- 前 2-3 个技能无前置依赖（入口点）
+- **不要生成任务** - 任务稍后由用户点击时生成
+
+═══════════════════════════════════════════
+【返回格式】
+
+返回纯 JSON（无 markdown，无额外文本）：
 
 {
-  "treeName": "string - name of the learning path",
-  "domain": "string - the domain (e.g., Web Development, Data Science)",
-  "description": "string - brief description of what the learner will achieve",
-  "estimatedDuration": "string - total time estimate (e.g., '6 months', '1 year')",
+  "treeName": "学习路径名称",
+  "domain": "领域（如：Web 开发、数据科学）",
+  "description": "简要描述学习者将达成的目标",
+  "estimatedDuration": "总时长估算（如：'6个月'、'1年'）",
   "skills": [
     {
-      "name": "string - concise skill name (2-4 words)",
-      "description": "string - what this skill teaches (1-2 sentences)",
-      "category": "string - category/group name",
-      "estimatedHours": number,
-      "difficulty": number (1-10),
-      "prerequisites": ["array of skill names that must be completed first - BE PRECISE"],
-      "resources": ["2-3 specific learning resources with URLs or book names"],
-      "xpReward": number (difficulty * estimatedHours * 10)
+      "name": "技能名称（2-4个词）",
+      "description": "该技能教什么（1-2句话）",
+      "category": "分类/组名",
+      "estimatedHours": 学时数,
+      "difficulty": 难度(1-10),
+      "prerequisites": ["前置技能名称数组 - 必须精确"],
+      "resources": ["2-3个具体学习资源（URL或书名）"],
+      "xpReward": XP奖励值
     }
   ]
 }
 
-Example skill structure:
+【示例】
 {
-  "name": "React Fundamentals",
-  "description": "Learn React components, state management, and hooks for building interactive UIs.",
-  "category": "Frontend",
+  "name": "React 基础",
+  "description": "学习 React 组件、状态管理和 Hooks，构建交互式界面。",
+  "category": "前端",
   "estimatedHours": 20,
   "difficulty": 4,
-  "prerequisites": ["JavaScript ES6+", "HTML & CSS Basics"],
-  "resources": ["React Official Docs (react.dev)", "Frontend Masters React Course", "Build a Todo App Tutorial"],
+  "prerequisites": ["JavaScript ES6+", "HTML & CSS 基础"],
+  "resources": ["React 官方文档 (react.dev)", "Frontend Masters React 课程", "构建 Todo 应用教程"],
   "xpReward": 800
 }`;
 
