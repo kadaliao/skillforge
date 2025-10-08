@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
                         type: task.type,
                         xpReward: task.xpReward,
                         estimatedHours: task.estimatedHours,
-                        checklistOptions: task.checklistOptions || null,
+                        checklistOptions: task.checklistOptions || undefined,
                       })),
                     }
                   : undefined,
