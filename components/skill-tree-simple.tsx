@@ -102,7 +102,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
       });
       if (!response.ok) throw new Error('Failed to refresh data');
       const data = await response.json();
-      setSkillsData(data.data.skills);
+      setSkillsData(data.skills);
     } catch (error) {
       console.error('Failed to refresh skill tree:', error);
       toast.error('Failed to refresh data');

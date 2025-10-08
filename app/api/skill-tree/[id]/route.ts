@@ -3,6 +3,65 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { calculateUserLevel } from '@/lib/gamification';
 
+// GET /api/skill-tree/[id] - Fetch skill tree with skills and tasks
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const skillTree = await prisma.skillTree.findUnique({
+      where: { id },
+      include: {
+        skills: {
+          include: {
+            prerequisites: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            tasks: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                type: true,
+                xpReward: true,
+                estimatedHours: true,
+                completed: true,
+                completedAt: true,
+                order: true,
+                checklistOptions: true,
+              },
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!skillTree) {
+      return NextResponse.json({ error: 'Skill tree not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(skillTree);
+  } catch (error) {
+    console.error('Failed to fetch skill tree:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch skill tree' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/skill-tree/[id] - Delete skill tree and update user stats
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

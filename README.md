@@ -6,9 +6,10 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-08 15:30
+> **Last Updated:** 2025-10-08 13:22
 
 ### 🆕 Recent Updates
+- **Template Sharing UI Fix** - Restored share/unshare functionality in dashboard skill tree cards with unified three-dot menu
 - **Template System** - Share skill trees as public templates, clone and customize community templates
 - **Personalized AI Generation** - Optional context fields for background, existing skills, and learning preferences
 - **Smart Skill Tree Adaptation** - AI skips redundant content, adjusts difficulty, matches resources to learning style

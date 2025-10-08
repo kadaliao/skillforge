@@ -14,12 +14,19 @@ export default async function DashboardPage() {
     redirect("/auth/signin")
   }
 
-  // Fetch user's skill trees with skill counts
+  // Fetch user's skill trees with skill counts and template info
   const skillTrees = await prisma.skillTree.findMany({
     where: {
       userId: session.user.id,
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      aiGenerated: true,
+      isTemplate: true,
+      isPublic: true,
+      createdAt: true,
       skills: {
         select: {
           id: true,

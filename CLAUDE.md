@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-08 15:30
+**Last Updated:** 2025-10-08 13:22
 
 ## Current Status
 
@@ -82,6 +82,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ⏳ **Deployment**: Production build and hosting setup (pending)
 
 **Recent Changes** (this session):
+- **ShareTemplateButton Integration Fix** (Phase 7 enhancement):
+  - Fixed missing share template functionality in dashboard skill tree cards
+  - Updated `SkillTreeCard` component to integrate `ShareTemplateButton` dropdown menu
+  - Modified dashboard query to fetch `isTemplate` and `isPublic` fields from database
+  - Replaced redundant delete-only button with unified three-dot menu (share/unshare/delete)
+  - Files updated: `app/dashboard/page.tsx:17-45`, `components/skill-tree-card.tsx`
+  - Cleaned up duplicate delete logic - now handled by ShareTemplateButton component
+
+**Previous Session Changes**:
 - **Template Sharing System** (Phase 7):
   - Created `/templates` page with public skill tree gallery
   - Implemented share/unshare API with privacy confirmation dialogs
@@ -105,7 +114,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Migration: `20251008043426_add_task_checklist_options`
   - New components: `components/ui/checkbox.tsx`, `lib/task-checklist.ts` (fallback rules)
 
-**Previous Session Changes**:
 - **Personalized AI Generation** (Phase 6):
   - Added collapsible "告诉我们更多" section with 3 optional natural language text fields
   - Background input: User's professional/educational background

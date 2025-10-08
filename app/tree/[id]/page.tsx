@@ -16,7 +16,7 @@ async function getSkillTree(id: string) {
   }
 
   const data = await res.json();
-  return data.data;
+  return data;
 }
 
 export default async function SkillTreePage({
