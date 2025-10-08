@@ -17,6 +17,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = session.user.id;
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const { name: customName } = cloneRequestSchema.parse(body);
@@ -52,7 +53,7 @@ export async function POST(
       // 1. Create new skill tree (use custom name if provided)
       const newTree = await tx.skillTree.create({
         data: {
-          userId: session.user!.id,
+          userId,
           name: customName || template.name,
           description: template.description,
           domain: template.domain,
