@@ -6,9 +6,10 @@ SkillForge is an AI-powered personal growth tracking system that gamifies learni
 
 ## ✨ Current Features
 
-> **Last Updated:** 2025-10-08 13:22
+> **Last Updated:** 2025-10-08 14:15
 
 ### 🆕 Recent Updates
+- **Vercel + Neon Deployment** - Complete deployment setup with one-click scripts, comprehensive guides, and production configs
 - **Template Sharing UI Fix** - Restored share/unshare functionality in dashboard skill tree cards with unified three-dot menu
 - **Template System** - Share skill trees as public templates, clone and customize community templates
 - **Personalized AI Generation** - Optional context fields for background, existing skills, and learning preferences
@@ -164,6 +165,15 @@ npm start                     # Start production server
 npm run lint                  # Run ESLint
 ```
 
+### Deployment
+```bash
+npm run vercel-build          # Vercel build script (Prisma + Next.js)
+./deploy.sh                   # One-click deployment to Vercel
+vercel --prod                 # Manual Vercel deployment
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide with Neon database setup.
+
 ### Claude Code Commands (when using [claude.ai/code](https://claude.com/code))
 ```bash
 /sync-status                  # Update CLAUDE.md with current project status
@@ -295,7 +305,7 @@ npm run lint                  # Run ESLint
 
 ## 📋 Roadmap
 
-### Phase 8 - Advanced Features (NEXT)
+### Phase 8 - Advanced Features (IN PROGRESS)
 
 - [ ] Framer Motion animations
   - Level up effects
@@ -303,7 +313,11 @@ npm run lint                  # Run ESLint
   - Achievement notifications
 - [ ] Touch gestures for mobile
 - [ ] Performance optimization
-- [ ] Production deployment (Vercel)
+- [x] **Production deployment** - Vercel + Neon setup complete
+  - Automated build scripts with Prisma integration
+  - Comprehensive deployment guide with troubleshooting
+  - Production environment templates
+  - One-click deployment script
 
 ## 🛠 Tech Stack
 
@@ -334,7 +348,9 @@ npm run lint                  # Run ESLint
 - JWT session strategy (edge runtime compatible)
 
 **Deployment:**
-- Vercel (planned)
+- Vercel with automated Prisma migrations
+- Neon PostgreSQL (serverless-optimized with connection pooling)
+- Production-ready build scripts and deployment guides
 
 ## 📊 Database Schema
 

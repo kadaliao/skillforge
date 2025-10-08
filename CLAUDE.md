@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated:** 2025-10-08 13:22
+**Last Updated:** 2025-10-08 14:15
 
 ## Current Status
 
@@ -76,12 +76,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ **Navigation Integration**: Templates link in user navigation and guest header
 - ✅ **Data Isolation**: Cloned trees are fully independent (unshare/delete original doesn't affect clones)
 
-**Phase 8 (NEXT)** - Advanced features:
+**Phase 8 (IN PROGRESS)** - Advanced features:
 - ⏳ **Animations**: Smooth transitions and micro-interactions (pending)
 - ⏳ **Mobile Optimization**: Touch-friendly controls and gestures (pending)
-- ⏳ **Deployment**: Production build and hosting setup (pending)
+- ✅ **Deployment**: Production build and hosting setup (completed)
 
 **Recent Changes** (this session):
+- **Vercel + Neon Deployment Setup** (Phase 8):
+  - Added Vercel deployment configuration (`vercel.json`) with build commands and region settings
+  - Updated `package.json` with `postinstall` and `vercel-build` scripts for automated Prisma client generation and migrations
+  - Created comprehensive deployment guide (`DEPLOYMENT.md`) with Neon database setup, environment variables, and troubleshooting
+  - Added production environment template (`.env.production.example`) with all required variables and documentation
+  - Created one-click deployment script (`deploy.sh`) with pre-flight checks and post-deployment checklist
+  - Updated `.gitignore` to include environment example files while protecting production secrets
+  - Removed Turbopack from production build (kept for dev) for better Vercel compatibility
+  - Files: `vercel.json`, `package.json`, `DEPLOYMENT.md`, `.env.production.example`, `deploy.sh`, `.gitignore`
+
+**Previous Session Changes**:
 - **ShareTemplateButton Integration Fix** (Phase 7 enhancement):
   - Fixed missing share template functionality in dashboard skill tree cards
   - Updated `SkillTreeCard` component to integrate `ShareTemplateButton` dropdown menu
@@ -162,9 +173,16 @@ npx prisma studio            # Open Prisma Studio (database GUI)
 ### Development
 ```bash
 npm run dev                   # Start dev server with Turbopack (http://localhost:3000)
-npm run build                 # Production build with Turbopack
+npm run build                 # Production build
 npm start                     # Start production server
 npm run lint                  # Run ESLint
+```
+
+### Deployment
+```bash
+npm run vercel-build          # Vercel build script (Prisma + Next.js)
+./deploy.sh                   # One-click deployment to Vercel
+vercel --prod                 # Manual Vercel deployment
 ```
 
 ### Environment Variables Required
