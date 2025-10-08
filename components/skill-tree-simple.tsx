@@ -557,7 +557,7 @@ export function SkillTreeSimple({ skillTree }: SkillTreeSimpleProps) {
                 {selectedSkill.tasks.length === 0 && (
                   <div className="text-center py-8 text-sm text-muted-foreground">
                     <p className="mb-2">No tasks yet for this skill.</p>
-                    <p>Click "✨ Generate Tasks" to let AI create tasks, or manually add them.</p>
+                    <p>Click &ldquo;✨ Generate Tasks&rdquo; to let AI create tasks, or manually add them.</p>
                   </div>
                 )}
               </div>

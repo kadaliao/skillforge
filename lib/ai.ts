@@ -248,7 +248,7 @@ ${backgroundSection}${skillsSection}${preferencesSection}
     let parsed;
     try {
       parsed = JSON.parse(jsonContent);
-    } catch (parseError) {
+    } catch {
       onProgress(`⚠️ Initial parse failed, attempting to fix JSON...\n`);
 
       // Common fixes for incomplete JSON

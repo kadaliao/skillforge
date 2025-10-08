@@ -125,7 +125,7 @@ export function TaskCreateDialog({
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
             <DialogDescription>
-              Add a custom task to this skill. Define what needs to be done and how much XP it's worth.
+              Add a custom task to this skill. Define what needs to be done and how much XP it&apos;s worth.
             </DialogDescription>
           </DialogHeader>
 

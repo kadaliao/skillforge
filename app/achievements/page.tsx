@@ -22,8 +22,6 @@ export default async function AchievementsPage() {
     },
   });
 
-  const unlockedIds = new Set(userAchievements.map((ua) => ua.achievement.id));
-
   // Combine with all achievement definitions
   const achievements = ACHIEVEMENT_DEFINITIONS.map((def) => {
     const userAchievement = userAchievements.find(

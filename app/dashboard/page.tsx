@@ -1,9 +1,8 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ShareTemplateButton } from "@/components/share-template-button"
 import Link from "next/link"
 import { SkillTreeCard } from "@/components/skill-tree-card"
 

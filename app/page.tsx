@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { SkillTreeGenerator } from '@/components/skill-tree-generator';
-import { Sparkles, Target, TrendingUp, Award } from 'lucide-react';
+import { Target, TrendingUp, Award } from 'lucide-react';
 
 interface SkillData {
   name: string;
