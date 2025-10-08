@@ -25,7 +25,10 @@ export async function UserNav() {
   if (!session?.user) {
     return (
       <div className="flex items-center gap-2">
-        <Button asChild variant="ghost">
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/templates">Templates</Link>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
           <Link href="/auth/signin">Sign In</Link>
         </Button>
       </div>
@@ -104,6 +107,9 @@ export async function UserNav() {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/achievements">🏆 Achievements</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/templates">📚 Templates</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
