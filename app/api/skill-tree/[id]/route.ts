@@ -72,6 +72,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = session.user.id;
     const { id } = await params;
 
     // Fetch skill tree to verify ownership
@@ -106,7 +107,7 @@ export async function DELETE(
     }
 
     // Verify ownership
-    if (skillTree.userId !== session.user.id) {
+    if (skillTree.userId !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -139,7 +140,7 @@ export async function DELETE(
       // Update user stats (deduct XP and recalculate level)
       if (xpToDeduct > 0) {
         const user = await tx.user.findUnique({
-          where: { id: session.user.id },
+          where: { id: userId },
           select: { totalXP: true },
         });
 
@@ -148,7 +149,7 @@ export async function DELETE(
           const newLevel = calculateUserLevel(newTotalXP);
 
           await tx.user.update({
-            where: { id: session.user.id },
+            where: { id: userId },
             data: {
               totalXP: newTotalXP,
               level: newLevel,
