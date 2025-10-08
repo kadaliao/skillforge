@@ -81,7 +81,7 @@ export async function POST(
             status: "LOCKED", // Reset all to LOCKED initially
             positionX: skill.positionX,
             positionY: skill.positionY,
-            aiMetadata: skill.aiMetadata,
+            aiMetadata: skill.aiMetadata || undefined,
           },
         });
 
@@ -98,6 +98,7 @@ export async function POST(
               order: task.order,
               xpReward: task.xpReward,
               estimatedHours: task.estimatedHours,
+              checklistOptions: task.checklistOptions || undefined,
               completed: false, // Reset completion status
             },
           });
